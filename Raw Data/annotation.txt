@@ -1,0 +1,7 @@
+ga = gestational age
+control = normal healthy placenta
+LOPET = late onset preeclampsia
+EOPET = early onset preeclampsia
+IUGR = intrauterine growth restriction
+
+*note we are looking for placentas with low pathology, which is why the majority of the samples are CONTROL placentas.

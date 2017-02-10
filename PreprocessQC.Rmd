@@ -1,0 +1,20 @@
+---
+title: "PreprocessQC"
+author: "Victor"
+date: "February 10, 2017"
+output: html_document
+---
+
+```{r, load libraries}
+library(minfi)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r, read data}
+getwd()
+basedir <- "../Placenta-Ethnicity/Ethnicity data"
+samplesheet <- read.metharray.sheet(basedir, recursive = TRUE)
+Eth_rgset <- read.metharray.exp(basedir, recursive = TRUE)
+
+```
