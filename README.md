@@ -8,4 +8,6 @@ Table of contents:
 
 2. [Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data)
 
+  + [Code to import data](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/PreprocessQC.Rmd)
+
 3. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results)
