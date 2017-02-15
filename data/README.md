@@ -2,7 +2,7 @@
 
 Table of Contents:
 
-1. [metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/supplementary%20clinical%20info) 
+1. [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/supplementary%20clinical%20info) 
 
   + human placental tissue from 45 subjects with self reported ethnicity
   + columns correspond to subject ethnicity, name, sex, gestational age and what complications they had in pregnancy (none, intrauterine growth (IUGR) restriction, or late onset preeclampsia (LOPET), neither of which affect DNAm)
@@ -15,3 +15,5 @@ Table of Contents:
   + one .idat file contains the methylated intensity profiles for all 450k CpG sites
   + one .idat file contains the unmethylated intensity profiles for all 450K CpG sites
   + Methylation is determined by taking the ratio of the two intensities at each site
+  
+3. [Preprocessed Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/processed_data)
