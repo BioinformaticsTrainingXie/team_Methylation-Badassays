@@ -2,17 +2,19 @@ Project Proposal: Methylation Badassays
 ================
 February 15, 2017
 
-### Motivation and background work
+Motivation and background work
+------------------------------
 
 DNA methylation (DNAm) - the covalent modification of DNA at locations where cytosine is followed by guanine (CpG sites), resulting in attached methyl groups - is the best understood component of epigenetic machinery \[1\]. This methylation is conventionally understood as a mechanism for cells to exert control over the expression of neighbouring genes, turning off or on the expression of specific genes as needed. After the discovery of DNAm, researchers have linked DNAm to many diseases like cancer and autism \[2-3\]. These marks vary across cell types, temporal development, and can change due to environmental stimuli. These factors are all taken into account when researchers are trying to use gene expression analysis when studying diseases. In recent years, several DNAm studies have suggested that a large portion of DNAm variability is associated with genetic ancestry and is heritable \[4\], making DNAm a potential confounding factor which is not given enough consideration in the context of DNA methylation analysis. The differences in methylation between populations with different ethnic backgrounds are likely due to the presence of between-population differences in single nucleotide polymorphism (SNP) allele frequencies \[7-8\] and allele-specific DNA methylation \[9-10\]. Differentially methylated CpG sites associated with pathology can be confounded by CpGs associated with genetic ancestry causing spurious results \[7-8\]. Therefore, genetic ancestry, as a covariate, needs to be accounted for in any epigenome-wide association study (EWAS).
 
 Although there are some studies investigating the population-specificity of human DNAm \[4, 11-12\], DNAm profiles across tissue types is extremely variable \[13\], and the amount of variability that can be accounted for by ethnicity in placenta samples have not yet been examined. Therefore, in order to investigate how DNA methylation affects prenatal health, it is important for us to identify genetic ancestry -associated CpGs to figure out true positives. This DNAm variability in the placenta due to ethnicity needs to be accounted for in large scale DNAm studies, or else no meaningful interpretation of results can be done to assess prenatal health.
 
-**Hypothesis:** DNA in placenta is differentially methylated across populations of different ethnicities.
+**Hypothesis:** DNA in placental tissue is differentially methylated across populations of different ethnicities.
 
 \*\*Note: It is important to distinguish between genetic ancestry, race and ethnicity. The latter two are social constructs and have no genetic definition. In contrast, genetic ancestry is a continuum which describes the architecture of genome variation between populations \[14\].
 
-### Division of labour
+Division of labour
+------------------
 
 <table style="width:97%;">
 <colgroup>
@@ -70,25 +72,30 @@ Although there are some studies investigating the population-specificity of huma
 </tbody>
 </table>
 
-### Dataset
+Dataset
+-------
 
-We are working with human placental tissue from 45 subjects; 20 controls and 25 patients. All subjects’ metadata is contained in a txt file with columns for the sample name, group (control vs. ), sex, and ethnicity. DNA methylation was measured at 450,000 CpG sites in each of these samples using the 450K microarray from Illumina.
+Link to our [data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data) subdirectory.
 
-[Link to our data subdirectory](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data)
+We are working with human placental tissue from 45 subjects with self reported ethnicity. All subjects’ [metadata is contained in a text file](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/supplementary%20clinical%20info) with columns corresponding to subject ethnicity, name, sex, gestational age and what complications they had in pregnancy (none, intrauterine growth (IUGR) restriction, or late onset preeclampsia (LOPET), neither of which affect DNAm). There are also columns for Sentrix ID and position, which correspond to the sample’s batch ID and position on the Illumina microarray, respectively. Each row is one subject.
 
-We will have access to a placental dataset used to determine the relationship between DNAm and neural tube defect in which the genetic ancestry is unknown.
+Bisulfite sequencing was conducted on all the tissue. This process converts all methylated cytosines to uracil; any identified cytosines are unmethylated. DNA methylation was measured at 450,000 CpG sites in each of these samples using the 450K microarray from Illumina. Raw DNAm data is contained in the [IDATS folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/IDATS). Each subject has two .idat files. One .idat file contains the methylated intensity profiles, while the other file contains the unmethylated intensity profiles for all 450K CpG sites. Methylation is determined by taking the ratio of the two intensities at each site.
 
-### Aims and methodology
+Victor insert here!
 
-**Aim 1:** Identify CpG sites in placenta cells which are differentially methylated in between Caucasians or Asians.
+Aims and methodology
+--------------------
+
+**Aim 1:** Identify differentially methylated CpG sites between Caucasians and Asians in placental tissue.
 
 **Methods:** We will preprocess and normalize the data using minfi, both of which are bioconductor packages to import and analyze Illumina methylation data \[15\]. We will determine which normalization method to use that best fits our datasets. For analysis, we will use logistic regression (rather than linear regression) to find the effect of genetic ancestry on methylation.
 
-**Aim 2:** Use the identified CpG sites from aim 1 to determine the genetic ancestry of a second dataset whose genetic ancestry is unknown. If the query sample is asian or caucasian, ancestry -specific CpG methylation sites can be filtered out, enabling the identification of true positives.
+**Aim 2:** Use the identified CpG sites from Aim 1 to determine the genetic ancestry of a second dataset whose genetic ancestry is unknown. If the query sample is Asian or Caucasian, ancestry -specific CpG methylation sites can be filtered out, enabling the identification of true positives.
 
 **Methods:** To visually assess the data, we will generate a heatmap of correlations between subjects from the second dataset to the subjects from the first dataset. To cluster the subjects from the second dataset we will explore hierarchical clustering (dendrograms) and principal component analysis (combine all samples of second dataset and see if they cluster with the Caucasian or Asian subset of the first dataset). We also will do cross validation - using random sampling - to ensure that our clusters are real. This may be a challenge due to our small sample sizes.
 
-### References:
+References:
+-----------
 
 1.  Law JA, Jacobsen SE: Establishing, maintaining and modifying DNA methylation patterns in plants and animals. Nat Rev Genet 2010, 11:204-220.
 
