@@ -13,7 +13,8 @@ library(ggplot2)
 
 ```{r, read data}
 getwd()
-basedir <- "../Placenta-Ethnicity/Ethnicity data"
+#input the right base directory
+basedir <- "C:/Users/nivretta/Documents/UBC/BIOF540 Stats/team_Methylation-Badassays"
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE)
 Eth_rgset <- read.metharray.exp(basedir, recursive = TRUE)
 
