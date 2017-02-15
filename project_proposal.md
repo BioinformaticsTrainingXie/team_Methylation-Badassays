@@ -75,13 +75,17 @@ Division of labour
 Dataset
 -------
 
-\*\*Private <Data:**> Link to our [data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data) subdirectory.
+\*\*Private <Data:**>
+
+Link to our [data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data) subdirectory.
 
 We are working with human placental tissue from 45 subjects with self reported ethnicity. All subjects’ [metadata is contained in a text file](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/supplementary%20clinical%20info) with columns corresponding to subject ethnicity, name, sex, gestational age and what complications they had in pregnancy (none, intrauterine growth (IUGR) restriction, or late onset preeclampsia (LOPET), neither of which affect DNAm). There are also columns for Sentrix ID and position, which correspond to the sample’s batch ID and position on the Illumina microarray, respectively. Each row is one subject.
 
 Bisulfite sequencing was conducted on all the tissue. This process converts all methylated cytosines to uracil; any identified cytosines are unmethylated. DNA methylation was measured at 450,000 CpG sites in each of these samples using the 450K microarray from Illumina. Raw DNAm data is contained in the [IDATS folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/IDATS). Each subject has two .idat files. One .idat file contains the methylated intensity profiles, while the other file contains the unmethylated intensity profiles for all 450K CpG sites. Methylation is determined by taking the ratio of the two intensities at each site.
 
-\*\*Public <data:**> We will also access a placental dataset in which the genetic ancestry is unknown. We will first determine genetic ancestry in this dataset, and then the relationship between DNAm and neural tube defect.
+\*\*Public <data:**>
+
+We will also access a placental dataset in which the genetic ancestry is unknown. We will first determine genetic ancestry in this dataset, and then the relationship between DNAm and neural tube defect.
 
 In this dataset the authors were looking for differentially methylated sites in the placenta of babies with neural tube defects (NTD) vs healthy placentas \[16\]. Second trimester human placental chorionic villi were collected from 19 control, 22 spina bifida, and 15 anencephalic fetuses in British Columbia, Canada. The ethnicity of these babies is unknown except for 9 (3 Asian, 6 Caucasian). DNA was extracted and methylation was measured using 450k technology. The data is [publicly accessible](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8).
 
