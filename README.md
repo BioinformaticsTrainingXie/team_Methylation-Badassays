@@ -8,7 +8,7 @@ Table of contents:
 
 2. [Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data)
 
-  + [Code to import data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/processed_data)
+  + [Code to import data](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/processed_data/PreprocessQC.Rmd)
   + [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/supplementary%20clinical%20info)
   + [Raw data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Raw%20Data/IDATS)
 
