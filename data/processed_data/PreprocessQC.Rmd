@@ -8,14 +8,56 @@ output: html_document
 ```{r, load libraries}
 library(minfi)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 ```
 
 ```{r, read data}
 getwd()
 #input the right base directory
-basedir <- "C:/Users/nivretta/Documents/UBC/BIOF540 Stats/team_Methylation-Badassays"
+basedir <- "C:/Users/Toshiba/Documents/Github Repos/team_Methylation-Badassays/data/Raw Data"
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE)
 Eth_rgset <- read.metharray.exp(basedir, recursive = TRUE)
 
+```
+
+Let's check the phenotype data attached to the rgset object
+```{r}
+phenoData <- pData(Eth_rgset)
+head(phenoData)
+head(row.names(phenoData))
+```
+Looks like none of the phenotype data was attached, except for the row names. Not sure why it doesn't automatically do this. However, we can manually attach it using the samplesheet.
+
+The row names of the samples were added to the rgset, so each row name corresponds to a sample. This will serve as an index to match the correct phenotype data to the appropriate sample.
+
+```{r}
+head(samplesheet)
+#combine Slide and Array columns into new column "ID", such that each row has an identifier that corresponds to the row names in the rgset
+samplesheet2 <- samplesheet %>% unite(ID, Slide, Array, sep = "_")
+head(samplesheet2)
+
+#arrange samplesheet in ascending order of the IDs (I think this is how the rgset organizes our samples, we will check this later)
+samplesheet3 <- samplesheet2 %>% arrange(ID)
+head(samplesheet3)
+head(row.names(phenoData))
+#looks like they are in order for the first 6 samples
+#let's make absolutely sure:
+
+row.names(samplesheet3) <- samplesheet3$ID
+row.names(samplesheet3) == row.names(phenoData)
+#Great. The row names of the sample sheet and the rgset phenotype data are in the same order. So now we can attach the samplesheet metadata to each sample.
+
+#To attach the information from the samplesheet we have to convert the samplesheet into an "annotated data frame" and make sure the dimension labels match the rgset. Don't ask me why
+adf_samplesheet <- as(samplesheet3, "AnnotatedDataFrame")
+dimLabels(adf_samplesheet) <- c("SampleNames", "SampleColumns")
+str(adf_samplesheet)
+str(Eth_rgset)
+#note the dimLabels of adf_samplesheet and Eth_rgset match now
+
+#Finall, we can attach the meta data to  the rgset
+phenoData(Eth_rgset) <- adf_samplesheet
+phenoData2 <- pData(Eth_rgset)
+head(phenoData2)
+#probably should have removed the basename, ID column, and sample plate before attaching.
 ```
