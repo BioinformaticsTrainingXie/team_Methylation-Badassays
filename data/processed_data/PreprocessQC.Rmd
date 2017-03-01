@@ -1,11 +1,12 @@
 ---
 title: "PreprocessQC"
-author: "Victor"
-date: "February 10, 2017"
-output: html_document
+author: "Victor, Ming, Michael"
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
-```{r, load libraries}
+```{r, load libraries, message=FALSE}
 library(minfi)
 library(dplyr)
 library(ggplot2)
@@ -14,8 +15,63 @@ library(ggplot2)
 ```{r, read data}
 getwd()
 #input the right base directory
-basedir <- "C:/Users/nivretta/Documents/UBC/BIOF540 Stats/team_Methylation-Badassays"
+setwd("../Raw Data/")
+basedir <- getwd()
+# read in sample sheet .csv file
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE)
-Eth_rgset <- read.metharray.exp(basedir, recursive = TRUE)
+# read in iDAT files using sample sheet
+Eth_rgset <- read.metharray.exp(targets = samplesheet)
 
 ```
+
+```{r}
+# phenotype data (from sample sheet)
+pheno <- pData(Eth_rgset)
+pheno[,1:6]
+# manifest
+mani <- getManifest(Eth_rgset)
+```
+Try different preporcessing methods:
+
+* Noob: "Implements the noob background subtraction method with dye-bias normalization"
+* Functional Normalization: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
+* Quantile Normalization: "Implements stratified quantile normalization preprocessing"
+
+```{r}
+# noob 
+eth_proproc_noob <- preprocessNoob(Eth_rgset)
+eth_proproc_noob
+# functional normalization
+eth_preproc_funnorm <- preprocessFunnorm(Eth_rgset)
+eth_preproc_funnorm
+# quantile normalization
+eth_preproc_quant <- preprocessQuantile(Eth_rgset,fixOutliers = TRUE,
+  removeBadSamples = FALSE, quantileNormalize = TRUE, stratified = TRUE, 
+  mergeManifest = FALSE, sex = NULL)
+eth_preproc_quant
+## later on we can use getSex() on preprocessed data to double check genders for each observation
+```
+
+
+Compare different preprocessing methods:
+
+Credit: https://github.com/swils6/PE_IUGR_DataPreprocessing/blob/master/PE_IUGR_FNormalization_Jan2016.md
+
+```{r}
+
+probeTypes <- data.frame(Name = featureNames(eth_proproc_noob),
+                         Type = getProbeType(eth_proproc_noob))
+
+
+par(mfrow = c(1, 2))
+# can't plot noob for now, will fix later
+#plotBetasByType(eth_preproc_noob, main = "Noob")
+plotBetasByType(getBeta(eth_preproc_funnorm[,1]), main = "Functional Normalization", probeTypes = probeTypes)
+plotBetasByType(getBeta(eth_preproc_quant[,1]), main = "Quantile Normalization", probeTypes = probeTypes)
+
+
+```
+
+A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better.
+
+Next step: QC
