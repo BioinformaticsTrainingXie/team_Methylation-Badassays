@@ -74,4 +74,35 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), main = "Quantile Normalization",
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better.
 
-Next step: QC
+QC
+```{r}
+qc <- getQC(MSet)
+plotQC(qc)
+densityPlot(MSet, sampGroups = phenoData$Sample_Group)
+densityBeanPlot(MSet, sampGroups = phenoData$Sample_Group)
+controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II")
+#Red is type 1, green is type 2
+qcReport(Eth_rgset, pdf= "qcReport.pdf")
+```
+
+Comparing preprocessing methodology
+```{r}
+MSet.raw <- preprocessRaw(Eth_rgset)
+MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
+
+MSet.fnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
+MSet.fnorm <- MSet.fnorm[order(featureNames(MSet.fnorm)), ]
+
+MSet.qnorm <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = TRUE, badSampleCutoff = 10.5, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
+MSet.qnorm <- MSet.qnorm[order(featureNames(MSet.qnorm)),]
+    
+probeTypes <- data.frame(Name = featureNames(MSet.raw),
+                         Type = getProbeType(MSet.raw))
+par(mfrow = c(2, 2))
+
+
+#legendpos = "btm" is used to generate an error to remove the legend all together. 
+plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
+plotBetasByType(getBeta(MSet.fnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob", legendPos = "btm")
+plotBetasByType(getBeta(MSet.qnorm[,1]), probeTypes = probeTypes, main = "Quantile", legendPos = "btm")
+```
