@@ -74,6 +74,22 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), main = "Quantile Normalization",
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better.
 
+Generating MethylSet and RatioSet
+```{r}
+MSet <- preprocessRaw(Eth_rgset) 
+RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
+beta <- getBeta(RSet)
+```
+
+Get GenomicRatioSet
+```{r}
+GRset <- mapToGenome(RSet)
+
+# Various functions available to access GRSet data
+
+gr <- granges(GRset)
+```
+
 QC
 ```{r}
 qc <- getQC(MSet)
