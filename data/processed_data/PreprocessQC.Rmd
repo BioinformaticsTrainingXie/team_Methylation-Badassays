@@ -98,7 +98,6 @@ densityPlot(MSet, sampGroups = pheno$Sample_Group)
 densityBeanPlot(MSet, sampGroups = pheno$Sample_Group)
 controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II")
 #Red is type 1, green is type 2
-qcReport(Eth_rgset, pdf= "qcReport.pdf")
 ```
 
 Comparing preprocessing methodology
