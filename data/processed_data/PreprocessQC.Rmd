@@ -94,8 +94,8 @@ QC
 ```{r}
 qc <- getQC(MSet)
 plotQC(qc)
-densityPlot(MSet, sampGroups = phenoData$Sample_Group)
-densityBeanPlot(MSet, sampGroups = phenoData$Sample_Group)
+densityPlot(MSet, sampGroups = pheno$Sample_Group)
+densityBeanPlot(MSet, sampGroups = pheno$Sample_Group)
 controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II")
 #Red is type 1, green is type 2
 qcReport(Eth_rgset, pdf= "qcReport.pdf")
@@ -122,3 +122,27 @@ plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
 plotBetasByType(getBeta(MSet.fnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob", legendPos = "btm")
 plotBetasByType(getBeta(MSet.qnorm[,1]), probeTypes = probeTypes, main = "Quantile", legendPos = "btm")
 ```
+
+
+```{r}
+# sex check
+eth_preproc_funnorm@colData$sex
+predicted_sex <- eth_preproc_funnorm@colData$predictedSex
+for (i in 1:length(predicted_sex)){
+  if (predicted_sex[i] == "F") {predicted_sex[i] = "FEMALE"}
+  else {predicted_sex[i] = "MALE"} }
+predicted_sex == eth_preproc_funnorm@colData$sex
+## all match
+```
+
+```{r}
+# check presence of SNPs inside probe body or single nucleotide extensions
+snps <- getSnpInfo(eth_preproc_funnorm)
+str(snps@listData$Probe_rs)
+
+eth_preproc_funnorm <- addSnpInfo(eth_preproc_funnorm)
+# drop the probes that contain either a SNP at the CpG interrogation or at the single nucleotide extension
+eth_preproc_funnorm_rmSNP <- dropLociWithSnps(eth_preproc_funnorm, snps=c("SBE","CpG"), maf=0)
+eth_preproc_funnorm_rmSNP
+```
+
