@@ -85,12 +85,12 @@ plotQC(qc)
 --Talk about above plot here. Good / Bad?
 
 ```{r}
-densityPlot(MSet, sampGroups = pheno$Sample_Group)
+densityPlot(MSet, sampGroups = pheno$Ethnicity) #bit hard to see
 ```
 --Talk about above plot
 
 ```{r}
-densityBeanPlot(MSet, sampGroups = pheno$Sample_Group) #This is pretty messy, can we make it look betteR? (split into two graphs maybe?)
+densityBeanPlot(MSet, sampGroups = pheno$Ethnicity) #This is pretty messy, can we make it look betteR? (split into two graphs maybe?)
 ```
 --Talka bout plot
 
@@ -99,7 +99,9 @@ controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II") #Red is type 1, 
 ```
 -- Talk about above
 
-
+```{r}
+mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
+```
 
 Comparing preprocessing methodology
 ```{r}
