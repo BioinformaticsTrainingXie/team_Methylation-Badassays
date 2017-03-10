@@ -6,31 +6,124 @@ output:
     keep_md: yes
 ---
 
+We are following this Minfi tutorial:
+https://www.bioconductor.org/help/course-materials/2015/BioC2015/methylation450k.html
+
+And we used some additional Minfi functions for QC following the advice of helpful grad students (Thanks Robinson lab!) and Dr. Meaghan's STAT540 DNA methylation lecture <add lecture link>
+
+For general information on Minfi, consult the user guide:
+http://bioconductor.org/packages/release/bioc/vignettes/minfi/inst/doc/minfi.pdf
+
+Further info about the functions and capabilities of Minfi can be found in the Minfi reference manual:
+http://bioconductor.org/packages/release/bioc/manuals/minfi/man/minfi.pdf
+
+For the relevant paper with more comprehensive discussion of Minfi:
+https://academic.oup.com/bioinformatics/article/30/10/1363/267584/Minfi-a-flexible-and-comprehensive-Bioconductor
+
+
+
 ```{r, load libraries, message=FALSE}
 library(minfi)
 library(dplyr)
 library(ggplot2)
 ```
+#1.0 Introduction
 
+Minfi has a couple of different classes because...
+
+The following classes and their details:
+
+RGChannelSet - Raw intensities 
+MethylSet - 
+GenomicMethylSet
+RatioSet
+GenomicRatioSet
+
+different classes allow for ' a flexible framework for method development and analyses'
+The natural starting point for analysis is usually the GenomicRatioSet class.
+
+#1.1 Load data
 ```{r, read data}
-getwd()
-#input the right base directory
-setwd("../Raw Data/")
+getwd() #input the right base directory
+setwd("./data/Raw Data/")
 basedir <- getwd()
-# read in sample sheet .csv file
-samplesheet <- read.metharray.sheet(basedir, recursive = TRUE)
-# read in iDAT files using sample sheet
-Eth_rgset <- read.metharray.exp(targets = samplesheet)
-
+samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
+Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
 ```
+
 
 ```{r}
-# phenotype data (from sample sheet)
-pheno <- pData(Eth_rgset)
+pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
 pheno[,1:6]
-# manifest
-mani <- getManifest(Eth_rgset)
+mani <- getManifest(Eth_rgset) # manifest **What is this? explain
 ```
+
+#1.2 Create Classes
+Generating MethylSet and RatioSet
+```{r}
+MSet <- preprocessRaw(Eth_rgset) 
+RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
+beta <- getBeta(RSet)
+```
+
+Get GenomicRatioSet
+```{r}
+GRset <- mapToGenome(RSet)# Various functions available to access GRSet data
+gr <- granges(GRset)
+```
+
+#2. QC
+--------------------------------------------------------------------------------------------------------------------------------------------
+Note: I think we should move all of the QC to here, so that it is obvious that we do QC before normalization -victor
+Note: I'm just going to move your section over here Ming, -Victor
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+```{r}
+qc <- getQC(MSet)
+plotQC(qc)
+```
+--Talk about above plot here. Good / Bad?
+
+```{r}
+densityPlot(MSet, sampGroups = pheno$Sample_Group)
+```
+--Talk about above plot
+
+```{r}
+densityBeanPlot(MSet, sampGroups = pheno$Sample_Group) #This is pretty messy, can we make it look betteR? (split into two graphs maybe?)
+```
+--Talka bout plot
+
+```{r}
+controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II") #Red is type 1, green is type 2
+```
+-- Talk about above
+
+
+
+Comparing preprocessing methodology
+```{r}
+MSet.raw <- preprocessRaw(Eth_rgset)
+MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
+
+MSet.fnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
+MSet.fnorm <- MSet.fnorm[order(featureNames(MSet.fnorm)), ]
+
+MSet.qnorm <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = TRUE, badSampleCutoff = 10.5, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
+MSet.qnorm <- MSet.qnorm[order(featureNames(MSet.qnorm)),]
+    
+probeTypes <- data.frame(Name = featureNames(MSet.raw),
+                         Type = getProbeType(MSet.raw))
+par(mfrow = c(2, 2))
+
+
+#legendpos = "btm" is used to generate an error to remove the legend all together. 
+plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
+plotBetasByType(getBeta(MSet.fnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob", legendPos = "btm")
+plotBetasByType(getBeta(MSet.qnorm[,1]), probeTypes = probeTypes, main = "Quantile", legendPos = "btm")
+```
+
+3. Normalization
 Try different preporcessing methods:
 
 * Noob: "Implements the noob background subtraction method with dye-bias normalization"
@@ -74,55 +167,6 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), main = "Quantile Normalization",
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better.
 
-Generating MethylSet and RatioSet
-```{r}
-MSet <- preprocessRaw(Eth_rgset) 
-RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
-beta <- getBeta(RSet)
-```
-
-Get GenomicRatioSet
-```{r}
-GRset <- mapToGenome(RSet)
-
-# Various functions available to access GRSet data
-
-gr <- granges(GRset)
-```
-
-QC
-```{r}
-qc <- getQC(MSet)
-plotQC(qc)
-densityPlot(MSet, sampGroups = pheno$Sample_Group)
-densityBeanPlot(MSet, sampGroups = pheno$Sample_Group)
-controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II")
-#Red is type 1, green is type 2
-```
-
-Comparing preprocessing methodology
-```{r}
-MSet.raw <- preprocessRaw(Eth_rgset)
-MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
-
-MSet.fnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
-MSet.fnorm <- MSet.fnorm[order(featureNames(MSet.fnorm)), ]
-
-MSet.qnorm <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = TRUE, badSampleCutoff = 10.5, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
-MSet.qnorm <- MSet.qnorm[order(featureNames(MSet.qnorm)),]
-    
-probeTypes <- data.frame(Name = featureNames(MSet.raw),
-                         Type = getProbeType(MSet.raw))
-par(mfrow = c(2, 2))
-
-
-#legendpos = "btm" is used to generate an error to remove the legend all together. 
-plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
-plotBetasByType(getBeta(MSet.fnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob", legendPos = "btm")
-plotBetasByType(getBeta(MSet.qnorm[,1]), probeTypes = probeTypes, main = "Quantile", legendPos = "btm")
-```
-
-
 ```{r}
 # sex check
 eth_preproc_funnorm@colData$sex
@@ -145,3 +189,4 @@ eth_preproc_funnorm_rmSNP <- dropLociWithSnps(eth_preproc_funnorm, snps=c("SBE",
 eth_preproc_funnorm_rmSNP
 ```
 
+4. Export processed data files (data.txt, and des.txt)
