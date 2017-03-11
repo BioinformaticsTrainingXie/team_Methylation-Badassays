@@ -44,12 +44,8 @@ The natural starting point for analysis is usually the GenomicRatioSet class.
 
 #1.1 Load data
 ```{r, read data}
-<<<<<<< HEAD
-getwd()
 #input the right base directory
-=======
 getwd() #input the right base directory
->>>>>>> 2baff207ff6dfb73c150e36872bed7955f5e202f
 setwd("./data/Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
@@ -60,7 +56,7 @@ Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files usin
 ```{r}
 pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
 pheno[,1:6]
-mani <- getManifest(Eth_rgset) # manifest **What is this? explain
+mani <- getManifest(Eth_rgset) # manifest probe design information
 ```
 
 #1.2 Create Classes
