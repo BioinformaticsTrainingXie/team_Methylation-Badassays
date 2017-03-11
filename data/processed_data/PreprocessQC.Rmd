@@ -28,7 +28,7 @@ Minfi has a couple of different classes to enable flexible development of prepro
 
 The following classes and their details:
 
-- **RGChannelSet** contains the .idat files which is a binary format containing the raw green and red channel intensities.  
+- **RGChannelSet** a binary format containing the raw green and red channel intensities.  
 
 - **MethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels.
 
@@ -38,7 +38,7 @@ The following classes and their details:
 
 - **GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
 
-For both RatiSet and GenomicRatioSet classes include the option of including a copy number measurement. 
+For both RatioSet and GenomicRatioSet classes include the option of including a copy number measurement. 
 
 
 
