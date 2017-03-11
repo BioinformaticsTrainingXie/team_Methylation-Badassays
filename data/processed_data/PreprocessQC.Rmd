@@ -54,7 +54,12 @@ library(ggplot2)
 
 #1.2 Load data
 ```{r, read data}
+<<<<<<< HEAD
+getwd()
+#input the right base directory
+=======
 getwd() #input the right base directory
+>>>>>>> 2baff207ff6dfb73c150e36872bed7955f5e202f
 setwd("./data/Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
@@ -179,6 +184,18 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), main = "Quantile Normalization",
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better.
 
+<<<<<<< HEAD
+### Approach of preprocessing without FunNorm and Quantile
+Generating MethylSet and RatioSet, using preprocessingRaw()
+```{r}
+MSet <- preprocessRaw(Eth_rgset) 
+RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
+beta <- getBeta(RSet)
+```
+
+Get GenomicRatioSet
+=======
+>>>>>>> 2baff207ff6dfb73c150e36872bed7955f5e202f
 ```{r}
 # sex check
 eth_preproc_funnorm@colData$sex
@@ -190,6 +207,66 @@ predicted_sex == eth_preproc_funnorm@colData$sex
 ## all match
 ```
 
+<<<<<<< HEAD
+QC
+[Resources used](https://www.bioconductor.org/help/course-materials/2015/BioC2015/methylation450k.html#preprocessnoob)
+```{r}
+qc <- getQC(MSet)
+plotQC(qc)
+densityPlot(MSet, sampGroups = pheno$Sample_Group)
+densityBeanPlot(MSet, sampGroups = pheno$Sample_Group)
+controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II")
+#Red is type 1, green is type 2
+```
+
+Comparing preprocessing methodology
+```{r}
+MSet.raw <- preprocessRaw(Eth_rgset)
+MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
+
+MSet.fnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
+MSet.fnorm <- MSet.fnorm[order(featureNames(MSet.fnorm)), ]
+
+MSet.qnorm <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = TRUE, badSampleCutoff = 10.5, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
+MSet.qnorm <- MSet.qnorm[order(featureNames(MSet.qnorm)),]
+    
+probeTypes <- data.frame(Name = featureNames(MSet.raw),
+                         Type = getProbeType(MSet.raw))
+par(mfrow = c(2, 2))
+
+
+#legendpos = "btm" is used to generate an error to remove the legend all together. Error is expected.
+plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
+plotBetasByType(getBeta(MSet.fnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob", legendPos = "btm")
+plotBetasByType(getBeta(MSet.qnorm[,1]), probeTypes = probeTypes, main = "Quantile", legendPos = "btm")
+```
+
+> Decided to use FunNorm/ Noob to do precprocessing
+
+```{r}
+#Sex check
+#Preprocessing annotation of sex due to density of X-chrom should match our phenotype data; QC step.
+predictedSex <- getSex(GRset)$predictedSex
+
+```
+
+### Checking for the presence of SNPs inside the probe body or CpG or at the nucleotide extension
+```{r}
+snps <- getSnpInfo(GRset)
+apply(snps, 2, function(x) length(which(!is.na(x))))
+
+# Adding SNP informtion to GenomicRatioSet object (GRset)
+GRset <- addSnpInfo(GRset)
+
+#Dropping probes with a SNP in either CpG interrogation site or Single Base Extension site. Why tho?
+
+# 
+GRset <- dropLociWithSnps(GRset, snps=c("SBE","CpG"), maf=0)
+```
+
+
+
+=======
 ```{r}
 # check presence of SNPs inside probe body or single nucleotide extensions
 snps <- getSnpInfo(eth_preproc_funnorm)
@@ -202,3 +279,4 @@ eth_preproc_funnorm_rmSNP
 ```
 
 4. Export processed data files (data.txt, and des.txt)
+>>>>>>> 2baff207ff6dfb73c150e36872bed7955f5e202f
