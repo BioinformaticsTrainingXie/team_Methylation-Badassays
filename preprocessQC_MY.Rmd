@@ -2,7 +2,7 @@
 title: "PreprocessQC_MY"
 author: "Michael Yuen"
 date: "March 10, 2017"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
