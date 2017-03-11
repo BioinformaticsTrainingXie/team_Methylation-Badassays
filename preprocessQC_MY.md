@@ -22,19 +22,13 @@ library(ggplot2)
 1.0 Introduction
 ================
 
-Minfi has a couple of different classes because...
+Different classes present in Minfi and their details: 1) RGChannelSet - Raw data from IDAT files, organized by probe color (green & red), instead of CpG sites. 2) MethylSet - Raw data organized by the CpG locus, not mapped to genome. This data has two types: methylated and unmethylated probes 3) GenomicMethylSet - MethylSet data mapped to genome (hg19) 4) RatioSet - Raw data organized by the CpG locus, but not mapped to genome. The data contains beta values 5) GenomicRatioSet - RatioSet data mapped to genome (hg19)
 
-The following classes and their details:
+The natural starting point for analysis is usually the GenomicRatioSet class.
 
-RGChannelSet - Raw intensities MethylSet - GenomicMethylSet RatioSet GenomicRatioSet
-
-different classes allow for ' a flexible framework for method development and analyses' The natural starting point for analysis is usually the GenomicRatioSet class.
-
-1.1 Load data
-=============
+### 1.1 Load data
 
 ``` r
-#input the right base directory
 getwd() #input the right base directory
 ```
 
@@ -53,6 +47,8 @@ samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample 
 ``` r
 Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
 ```
+
+### 1.2 Adding phenotype data
 
 ``` r
 pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
@@ -158,7 +154,7 @@ mani <- getManifest(Eth_rgset) # manifest probe design information
 
     ## Loading required package: IlluminaHumanMethylation450kmanifest
 
-Comparing preprocessing methodology
+### 1.3 Comparing preprocessing methodology
 
 ``` r
 MSet.raw <- preprocessRaw(Eth_rgset)
@@ -233,10 +229,15 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), probeTypes = probeTypes, main = 
 
 > A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better. PreprocessingFunnorm is best.
 
-1.2 Create Classes (no longer needed in preprocessFunnorm)
-==========================================================
+-   Raw: "Converts the Red/Green channel for an Illumina methylation array into methylation signal, without using any normalization."
+-   Noob: "Implements the noob background subtraction method with dye-bias normalization"
+-   Functional Normalization: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
+-   Quantile Normalization: "Implements stratified quantile normalization preprocessing"
 
-Generating MethylSet and RatioSet for preprocessing raw and preprocessing noob
+1.3a Create Classes (no longer needed in preprocessFunnorm)
+===========================================================
+
+Generating MethylSet and RatioSet for preprocessingRaw and preprocessingNoob
 
 ``` r
 #MSet.raw <- preprocessRaw(Eth_rgset)
@@ -250,8 +251,8 @@ Get GenomicRatioSet
 #gr <- granges(GRset)
 ```
 
-\#2. QC
--------
+\#2. Quality Controls
+---------------------
 
 Note: I think we should move all of the QC to here, so that it is obvious that we do QC before normalization -victor Note: I'm just going to move your section over here Ming, -Victor --------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -295,10 +296,6 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 ![](preprocessQC_MY_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 > The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
-
--   Noob: "Implements the noob background subtraction method with dye-bias normalization"
--   Functional Normalization: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
--   Quantile Normalization: "Implements stratified quantile normalization preprocessing"
 
 ### Sex check
 
