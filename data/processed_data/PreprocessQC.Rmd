@@ -9,7 +9,7 @@ output:
 We are following this Minfi tutorial:
 https://www.bioconductor.org/help/course-materials/2015/BioC2015/methylation450k.html
 
-And we used some additional Minfi functions for QC following the advice of helpful grad students (Thanks Robinson lab!) and Dr. Meaghan's STAT540 DNA methylation lecture <add lecture link>
+And we used some additional Minfi functions for QC following the advice of helpful grad students (Thanks Robinson lab!) and [Dr. Meaghan's STAT540 DNA methylation lecture] (http://stat540-ubc.github.io/lectures/lect15_STAT540_Methylation_Presentation%20MJ%20March%202017.pdf)
 
 For general information on Minfi, consult the user guide:
 http://bioconductor.org/packages/release/bioc/vignettes/minfi/inst/doc/minfi.pdf
@@ -20,29 +20,39 @@ http://bioconductor.org/packages/release/bioc/manuals/minfi/man/minfi.pdf
 For the relevant paper with more comprehensive discussion of Minfi:
 https://academic.oup.com/bioinformatics/article/30/10/1363/267584/Minfi-a-flexible-and-comprehensive-Bioconductor
 
+#1.0 Introduction
 
+Minfi package separates data from annotation and annotation from array design. The annotation means how methylation loci are associated with gneomic locations and design means how probes on the array are matched with relevant color channels to produce the Meth and Unmeth signals. 
+
+Minfi has a couple of different classes to enable flexible development of preprocessing and analysis methods. For the classes have 'Genomic' prefix, it means the methylation loci have been associated with genomic location. The natural starting point for analysis is usually the GenomicRatioSet class.
+
+The following classes and their details:
+
+- **RGChannelSet** contains the .idat files which is a binary format containing the raw green and red channel intensities.  
+
+- **MethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels.
+
+- **GenomicMethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels. Also, the methylation loci have been associated with genomic location.
+
+- **RatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values).
+
+- **GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
+
+For both RatiSet and GenomicRatioSet classes include the option of including a copy number measurement. 
+
+
+
+
+
+#1.1 Dependencies
 
 ```{r, load libraries, message=FALSE}
 library(minfi)
 library(dplyr)
 library(ggplot2)
 ```
-#1.0 Introduction
 
-Minfi has a couple of different classes because...
-
-The following classes and their details:
-
-RGChannelSet - Raw intensities 
-MethylSet - 
-GenomicMethylSet
-RatioSet
-GenomicRatioSet
-
-different classes allow for ' a flexible framework for method development and analyses'
-The natural starting point for analysis is usually the GenomicRatioSet class.
-
-#1.1 Load data
+#1.2 Load data
 ```{r, read data}
 getwd() #input the right base directory
 setwd("./data/Raw Data/")
@@ -58,7 +68,7 @@ pheno[,1:6]
 mani <- getManifest(Eth_rgset) # manifest **What is this? explain
 ```
 
-#1.2 Create Classes
+#1.3 Create Classes
 Generating MethylSet and RatioSet
 ```{r}
 MSet <- preprocessRaw(Eth_rgset) 
