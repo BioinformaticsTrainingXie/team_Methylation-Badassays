@@ -4,6 +4,7 @@ author: "Victor, Ming, Michael"
 output: 
   html_document: 
     keep_md: yes
+    toc: yes
 ---
 
 We are following this Minfi tutorial:
