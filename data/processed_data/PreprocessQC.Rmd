@@ -163,9 +163,9 @@ pfilter(Eth_rgset2, pnthresh = 0.01) #we used the pfilter() function from waterm
 
 Try different normalization:
 
-* Noob: "Implements the noob background subtraction method with dye-bias normalization"
-* Functional Normalization: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
-* Quantile Normalization: "Implements stratified quantile normalization preprocessing"
+* **Noob**: "Implements the noob background subtraction method with dye-bias normalization"
+* **Functional Normalization**: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
+* **Quantile Normalization**: "Implements stratified quantile normalization preprocessing"
 
 ### 3.1 Comparing preprocessing methodology
 
