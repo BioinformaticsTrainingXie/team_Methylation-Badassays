@@ -38,11 +38,7 @@ The following classes and their details:
 
 - **GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
 
-For both RatioSet and GenomicRatioSet classes include the option of including a copy number measurement. 
-
-
-
-
+The natural starting point for analysis is usually the GenomicRatioSet class.
 
 #1.1 Dependencies
 
@@ -126,7 +122,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 bad_p <- detectionP(Eth_rgset, type = "m+u")
 MSet2 <- MSet[rowSums(bad_p <= 0.01) == ncol(bad_p),]
 ```
-Went from `r nrow(MSet)` to 'r ' Probes
+Went from `r nrow(MSet)` to 'r nrow(MSet2)' Probes
 
 ```{r beadcount}
 bead <- beadcount(Eth_rgset2)
@@ -156,7 +152,6 @@ Comparing preprocessing methodology
 ```{r}
 MSet.raw <- preprocessRaw(Eth_rgset)
 MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
-
 MSet.fnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
 MSet.fnorm <- MSet.fnorm[order(featureNames(MSet.fnorm)), ]
 
@@ -166,7 +161,6 @@ MSet.qnorm <- MSet.qnorm[order(featureNames(MSet.qnorm)),]
 probeTypes <- data.frame(Name = featureNames(MSet.raw),
                          Type = getProbeType(MSet.raw))
 par(mfrow = c(2, 2))
-
 
 #legendpos = "btm" is used to generate an error to remove the legend all together. 
 plotBetasByType(MSet.raw[,1], main = "Raw", legendPos = "btm")
