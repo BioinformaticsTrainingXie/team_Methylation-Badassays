@@ -136,29 +136,6 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
 
-### Sex check
-```{r}
-eth_preproc_funnorm@colData$sex
-predicted_sex <- eth_preproc_funnorm@colData$predictedSex
-for (i in 1:length(predicted_sex)){
-  if (predicted_sex[i] == "F") {predicted_sex[i] = "FEMALE"}
-  else {predicted_sex[i] = "MALE"} }
-predicted_sex == eth_preproc_funnorm@colData$sex
-## all match
-```
-
-### Checking for the presence of SNPs inside the probe body or CpG or at the nucleotide extension
-```{r}
-# check presence of SNPs inside probe body or single nucleotide extensions
-snps <- getSnpInfo(eth_preproc_funnorm)
-str(snps@listData$Probe_rs)
-
-eth_preproc_funnorm <- addSnpInfo(eth_preproc_funnorm)
-# drop the probes that contain either a SNP at the CpG interrogation or at the single nucleotide extension
-eth_preproc_funnorm_rmSNP <- dropLociWithSnps(eth_preproc_funnorm, snps=c("SBE","CpG"), maf=0)
-eth_preproc_funnorm_rmSNP
-```
-
 
 ```{r bad detection p values}
 bad_p <- detectionP(Eth_rgset, type = "m+u")
