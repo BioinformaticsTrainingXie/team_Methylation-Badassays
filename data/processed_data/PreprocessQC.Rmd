@@ -108,26 +108,57 @@ Samples with lots of bad detection p value probes will appear as outliers in the
 qc <- getQC(MSet)
 plotQC(qc)
 ```
---Talk about above plot here. Good / Bad?
+
+> The plot estimates samples-specific probe intensities from the MethylSet, comparing methylation probes (M) against unmethylation probes (UM). Intensities for each M and UM are plotted to ensure that they have similar intensities and that the intensities stronger than 10.
+
 
 ```{r}
 densityPlot(MSet, sampGroups = pheno$Ethnicity) #bit hard to see
 ```
---Talk about above plot
+
+> This is a density plot of the beta values for all samples annotated by ethnicity. Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s
 
 ```{r}
 densityBeanPlot(MSet, sampGroups = pheno$Ethnicity) #This is pretty messy, can we make it look betteR? (split into two graphs maybe?)
 ```
---Talka bout plot
+
+> Similar to the density plot above, but plotted as a bean plot, color coded by ethnicity
 
 ```{r}
 controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II") #Red is type 1, green is type 2
 ```
--- Talk about above
+
+> The 450k array contains several internal control probes that can be used to assess the quality control of different sample preparation steps, in this case, bisulfite conversion. Each control probe is plotted as a strip plot here, showing the consistency of each control probe, suggesting that the changes in our probe sets are not due to errors in preparation.
 
 ```{r}
 mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 ```
+
+> The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
+
+### Sex check
+```{r}
+eth_preproc_funnorm@colData$sex
+predicted_sex <- eth_preproc_funnorm@colData$predictedSex
+for (i in 1:length(predicted_sex)){
+  if (predicted_sex[i] == "F") {predicted_sex[i] = "FEMALE"}
+  else {predicted_sex[i] = "MALE"} }
+predicted_sex == eth_preproc_funnorm@colData$sex
+## all match
+```
+
+### Checking for the presence of SNPs inside the probe body or CpG or at the nucleotide extension
+```{r}
+# check presence of SNPs inside probe body or single nucleotide extensions
+snps <- getSnpInfo(eth_preproc_funnorm)
+str(snps@listData$Probe_rs)
+
+eth_preproc_funnorm <- addSnpInfo(eth_preproc_funnorm)
+# drop the probes that contain either a SNP at the CpG interrogation or at the single nucleotide extension
+eth_preproc_funnorm_rmSNP <- dropLociWithSnps(eth_preproc_funnorm, snps=c("SBE","CpG"), maf=0)
+eth_preproc_funnorm_rmSNP
+```
+
 
 ```{r bad detection p values}
 bad_p <- detectionP(Eth_rgset, type = "m+u")
