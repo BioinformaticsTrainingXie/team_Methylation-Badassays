@@ -42,6 +42,8 @@ The natural starting point for analysis is usually the GenomicRatioSet class.
 
 #1.1 Dependencies
 
+Installed the necessary dependencies by: 
+
 ```{r, load libraries, message=FALSE}
 #source("https://bioconductor.org/biocLite.R")
 #biocLite("wateRmelon")
@@ -53,6 +55,9 @@ library(ggplot2)
 ```
 
 #1.2 Load data
+
+We start with reading the .IDAT files and we read in a sample sheet, and then use the sample sheet to load the data into a RGChannelSet. 
+
 ```{r, read data}
 #input the right base directory
 getwd() #input the right base directory
@@ -63,26 +68,31 @@ Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files usin
 Eth_rgset2 <- read.metharray.exp(targets = samplesheet, extended = TRUE) #extended Rgset to get bead count info
 ```
 
+The Eth_rgset class contains the intensities of the internal control probes as well and as our data were read from a data sheet experiment, the phenotype data is also stored in the Eth_rgset and can be accessed via the accessor command pData.
 
-```{r}
+```{r, pData}
 pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
 pheno[,1:6]
-mani <- getManifest(Eth_rgset) # manifest probe design information
+mani <- getManifest(Eth_rgset) # manifest probe design information of the array.
 ```
 
 #1.3 Create Classes
-Generating MethylSet and RatioSet
+Generating **MethylSet**, which contains only the methylated and unmethylated signals, and **RatioSet**, which stores Beta vlues and/or M values instead of the methylated and unmethylated signals: 
 
 ```{r}
-MSet <- preprocessRaw(Eth_rgset) 
-RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
-beta <- getBeta(RSet)
+MSet <- preprocessRaw(Eth_rgset) # Mset function matches up the different probes and color channels. 
+
+RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE) #CN is the sum of the methylated and unmethylated signals/
+
+beta <- getBeta(RSet) # The function getBeta returns the Beta value matrix. 
 ```
 
-Get GenomicRatioSet
+Get **GenomicRatioSet**, 
+
 ```{r}
-GRset <- mapToGenome(RSet)# Various functions available to access GRSet data
-gr <- granges(GRset)
+GRset <- mapToGenome(RSet) #The function mapToGenome applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
+
+gr <- granges(GRset) #to return the probe locations as a genomic ranges. 
 ```
 
 #2. QC
