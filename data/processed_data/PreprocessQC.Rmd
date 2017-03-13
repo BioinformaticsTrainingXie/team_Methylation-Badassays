@@ -132,19 +132,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
 
-```{r beadcount}
-bead <- beadcount(Eth_rgset2)
-bead2 <- as.matrix(bead)
-#MSet3 <- MSet2[rowSums(!is.na(bead2)) == ncol(bead2),]
-
-bead3 <- as.data.frame(rowSums(!is.na(bead2)) == ncol(bead2))
-colnames(bead3) <- 'x'
-bead3$cpg <- row.names(bead3)
-bead3 <- filter(bead3, x != TRUE)
-head(bead3)
-
-MSet2[!row.names(MSet2) %in% bead3$cpg,]
-
+```{r bad detection p value beadcount}
 MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) 
 ```
 > We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
