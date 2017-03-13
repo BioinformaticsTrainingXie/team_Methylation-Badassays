@@ -25,21 +25,19 @@ https://academic.oup.com/bioinformatics/article/30/10/1363/267584/Minfi-a-flexib
 
 Minfi package separates data from annotation and annotation from array design. The annotation means how methylation loci are associated with gneomic locations and design means how probes on the array are matched with relevant color channels to produce the Meth and Unmeth signals. 
 
-Minfi has a couple of different classes to enable flexible development of preprocessing and analysis methods. For the classes have 'Genomic' prefix, it means the methylation loci have been associated with genomic location. The natural starting point for analysis is usually the GenomicRatioSet class.
+Minfi has a couple of different classes to enable flexible development of preprocessing and analysis methods. Quality control and normalization methods can, therefore, be optimally customized to fit unique datasets. The starting point is the raw intensity (RGchannelset) and the end point is the GenomicRatioSet object, which can be exported into a .txt file for downstream analyses.
 
 The following classes and their details:
 
-- **RGChannelSet**: a binary format containing the raw green and red channel intensities.  
+**RGChannelSet**: a binary format containing the raw green and red channel intensities.  
 
-- **MethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels.
+**MethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels.
 
-- **GenomicMethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels. Also, the methylation loci have been associated with genomic location.
+**GenomicMethylSet** represents the Meth and Unmeth measurements and are useful for preprocessing routines delivering final measurements in these channels. Also, the methylation loci have been associated with genomic location.
 
-- **RatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values).
+**RatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values).
 
-- **GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
-
-The natural starting point for analysis is usually the GenomicRatioSet class.
+**GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
 
 #1.1 Dependencies
 
@@ -74,27 +72,29 @@ The Eth_rgset class contains the intensities of the internal control probes as w
 ```{r, pData}
 pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
 pheno[,1:6]
-mani <- getManifest(Eth_rgset) # manifest probe design information of the array.
+getManifest(Eth_rgset) # manifest probe design information of the array.
 ```
+Manifest verifies that we are working with 450K data.
 
 #1.3 Create Classes
 Generating **MethylSet**, which contains only the methylated and unmethylated signals, and **RatioSet**, which stores Beta vlues and/or M values instead of the methylated and unmethylated signals: 
 
 ```{r}
-MSet <- preprocessRaw(Eth_rgset) # Mset function matches up the different probes and color channels. 
-
-RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE) #CN is the sum of the methylated and unmethylated signals/
-
-beta <- getBeta(RSet) # The function getBeta returns the Beta value matrix. 
+MSet <- preprocessRaw(Eth_rgset) # Processes raw intensity data into Methylated and Unmethylated values (can conver to Beta or 'M' values). Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s, corresponding to unmethylated and methylated respectively.
 ```
-
-Get **GenomicRatioSet**, 
+preprocessRaw() converts raw intensity data (in the form of IDAT files) into Methylated and Unmethylated values. These values are called Beta or M-values. Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s. M-values are the same information just on a log scale, which has been shown to be better for some downstream statistical analyses.
 
 ```{r}
-GRset <- mapToGenome(RSet) #The function mapToGenome applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
-
-gr <- granges(GRset) #to return the probe locations as a genomic ranges. 
+RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE) #CN is the sum of the methylated and unmethylated signals
 ```
+ratioConvert() consolidates methylated and unmethylated values per CpG site into one value (a ratio of Methylated / Unmethylated).
+
+Get **GenomicRatioSet**: 
+```{r}
+GRset <- mapToGenome(RSet) 
+```
+The function mapToGenome() applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
+granges(GRset) can be used to return the probe locations as a genomic ranges. 
 
 #2. Quality Control
 In this section we will use some tools from the Minfi package to see if there are any 'bad' samples, obvious outliers, and to remove non-useful probes. What is considered a 'bad' sample? Samples that have been processed poorly due to human error can have global unpredictable affects on DNAm readings. Smaller effects can be seen due to biases like male/female sex, or techinical artificats like row position or chip. Most of these biases we hope to identify in this section and correct for.
@@ -105,26 +105,21 @@ Samples with lots of bad detection p value probes will appear as outliers in the
 qc <- getQC(MSet)
 plotQC(qc)
 ```
-
-> The plot estimates samples-specific probe intensities from the MethylSet, comparing methylation probes (M) against unmethylation probes (UM). Intensities for each M and UM are plotted to ensure that they have similar intensities and that the intensities stronger than 10.
-
+> The plot estimates samples-specific probe intensities from the MethylSet, comparing methylation probes (M) against unmethylation probes (UM). Intensities for each M and UM are plotted to ensure that they have similar intensities and that the intensities stronger than 10. Bad samples (with lots of bad detection p value probes) will cluster together and lower on the plot. We can see that our samples seem to cluster all together in the 1st quadrant with no obvious outliers.
 
 ```{r}
 densityPlot(MSet, sampGroups = pheno$Ethnicity) #bit hard to see
 ```
-
-> This is a density plot of the beta values for all samples annotated by ethnicity. Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s
+> This is a density plot of the beta values for all samples annotated by ethnicity. We can see that there are no obvious outliers as each sample follows a relatively similar average beta value distribution across all probes.
 
 ```{r}
-densityBeanPlot(MSet, sampGroups = pheno$Ethnicity) #This is pretty messy, can we make it look betteR? (split into two graphs maybe?)
+densityBeanPlot(MSet, sampGroups = pheno$Ethnicity)
 ```
-
-> Similar to the density plot above, but plotted as a bean plot, color coded by ethnicity
+> Similar to the density plot above, but plotted as a bean plot, color coded by ethnicity. Again, no obvious outliers.
 
 ```{r}
 controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II") #Red is type 1, green is type 2
 ```
-
 > The 450k array contains several internal control probes that can be used to assess the quality control of different sample preparation steps, in this case, bisulfite conversion. Each control probe is plotted as a strip plot here, showing the consistency of each control probe, suggesting that the changes in our probe sets are not due to errors in preparation.
 
 ```{r}
@@ -133,7 +128,10 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
 
-We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
+> So far all of our QC checks have shown no evidence that there are any obvious outliers or samples that might need to be removed. Here is our first piece of evidence that some samples might be more *interesting*. 
+
+> PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
+
 ```{r beadcount}
 bead <- beadcount(Eth_rgset2)
 bead2 <- as.matrix(bead)
@@ -147,12 +145,15 @@ head(bead3)
 
 MSet2[!row.names(MSet2) %in% bead3$cpg,]
 
-pfilter(Eth_rgset2, pnthresh = 0.01) 
+MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) 
 ```
+> We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
+
+> In summary, we started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes. SNP probes and Sex probes will also need to be removed. However, Minfi's normalization functions will automatically do this (may depend on the type of normalization used).
 
 # 3. Normalization
 
-Try different normalization:
+There are a couple different normalization methods used in DNA methylation analysis. There isn't a consensus on which method is the best. And metrics to evaluate how good normalization methods perform are vague and unclear. So we will try the different available normalization methods:
 
 * **Noob**: "Implements the noob background subtraction method with dye-bias normalization"
 * **Functional Normalization**: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
@@ -161,41 +162,40 @@ Try different normalization:
 ### 3.1 Comparing normalization methodology
 
 **preprocessNoob**
-
-First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for). 
-
-```{r,noob}
-
+First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for).
+```{r}
 MSet.noob <- preprocessNoob(Eth_rgset)
 MSet.noob <- MSet.noob[order(featureNames(MSet.noob)), ]
 ```
-
 **preprocessFunnorm**
-
 We use preprocessFunnorm function to implement the functional normalization alogrithm which uses the internal control probes present on the array to infer between-array technical variation.
-
-```{r,funnorm}
+```{r}
 eth_preproc_funnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
 eth_preproc_funnorm <- eth_preproc_funnorm[order(featureNames(eth_preproc_funnorm)), ]
-
+```
+**preprocessQuantile**
+```{r}
 eth_preproc_quant <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = FALSE, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
 eth_preproc_quant <- eth_preproc_quant[order(featureNames(eth_preproc_quant)),]
+```
+Okay, now we have all of our data into objects that correspond to each normalization method. We will assess how they normalized based on the distribution of Type I and Type II probes after normalization.
+```{r}
+probeTypes <- data.frame(Name = featureNames(MSet2.raw),
+                         Type = getProbeType(MSet2.raw)) #legendpos = "btm" is used to generate an error to remove the legend all together. 
+plotBetasByType(MSet2.raw[,1], main = "Raw")
+```
+> preprocessRaw does no normalization so we can see that the type I and type II (infinium I & II) probes have a distinct distribution. As we try different normalization methods we will assess how they perform by looking how close the distributions shift towards overlapping.
 
-## later on we can use getSex() on preprocessed data to double check genders for each observation
-    
-probeTypes <- data.frame(Name = featureNames(MSet.raw),
-                         Type = getProbeType(MSet.raw))
-
-#legendpos = "btm" is used to generate an error to remove the legend all together. 
-plotBetasByType(MSet.raw[,1], main = "Raw")
+```{r}
 plotBetasByType(MSet.noob[,1], main = "Noob")
 plotBetasByType(getBeta(eth_preproc_funnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob")
 plotBetasByType(getBeta(eth_preproc_quant[,1]), probeTypes = probeTypes, main = "Quantile")
 ```
-
-> A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization appears to be better at this task with our dataset.
+> A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset.
+>  Hansen et al. 2014 suggests quantile normalization will be better for datasets where we are looking for small differences. FunNorm is more appropriate for when global changes are expected.
 
 ### Sex check
+Here we use Minfi's preprocessFunnorm's built-in sex prediction function to verify that there were no sample mixups:
 ```{r}
 eth_preproc_funnorm@colData$sex
 predicted_sex <- eth_preproc_funnorm@colData$predictedSex
@@ -203,10 +203,10 @@ for (i in 1:length(predicted_sex)){
   if (predicted_sex[i] == "F") {predicted_sex[i] = "FEMALE"}
   else {predicted_sex[i] = "MALE"} }
 predicted_sex == eth_preproc_funnorm@colData$sex
-## all match
 ```
+> No sex-specific sample mix ups.
 
-### Checking for the presence of SNPs inside the probe body or CpG or at the nucleotide extension
+### Next we check for the presence of SNPs inside the probe body or CpG or at the nucleotide extension. Such probes will be removed.
 ```{r}
 # check presence of SNPs inside probe body or single nucleotide extensions
 snps <- getSnpInfo(eth_preproc_funnorm)
