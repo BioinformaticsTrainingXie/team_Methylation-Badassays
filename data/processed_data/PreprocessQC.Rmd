@@ -76,7 +76,7 @@ getManifest(Eth_rgset) # manifest probe design information of the array.
 ```
 Manifest verifies that we are working with 450K data.
 
-#1.3 Create Classes
+#1.3 Create Classes - with no normalization
 Generating **MethylSet**, which contains only the methylated and unmethylated signals, and **RatioSet**, which stores Beta vlues and/or M values instead of the methylated and unmethylated signals: 
 
 ```{r}
@@ -96,8 +96,11 @@ GRset <- mapToGenome(RSet)
 The function mapToGenome() applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
 granges(GRset) can be used to return the probe locations as a genomic ranges. 
 
-#2. Quality Control
-In this section we will use some tools from the Minfi package to see if there are any 'bad' samples, obvious outliers, and to remove non-useful probes. What is considered a 'bad' sample? Samples that have been processed poorly due to human error can have global unpredictable affects on DNAm readings. Smaller effects can be seen due to biases like male/female sex, or techinical artificats like row position or chip. Most of these biases we hope to identify in this section and correct for.
+#2. Quality Control (QC) - before normalization
+
+Before we do normalization we should remove samples that are globally much different than the rest. If a sample has too many failed probes or a very different distribution of methylation measurements, then this is an indication that something went technically wrong with the sample, and therefore carries unreliable data.
+
+In this section we will use some tools from the Minfi package to see if there are any 'bad' samples, obvious outliers, and to remove non-useful probes. What is considered a 'bad' sample? Samples that have been processed poorly due to human error can have global unpredictable affects on DNAm readings.Most of these biases we hope to identify in this section and correct for.
 
 Samples with lots of bad detection p value probes will appear as outliers in the following QC plots. Bad detection p value probes are basically probes that fail to be statistically different (p value > 0.01) from background intensity. Illumina has a set a of negative control probes that give us the 'background intensity value'.
 
@@ -132,20 +135,15 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
 
-```{r bad detection p value beadcount}
-MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) 
-```
-> We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
-
-> In summary, we started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes. SNP probes and Sex probes will also need to be removed. However, Minfi's normalization functions will automatically do this (may depend on the type of normalization used).
-
-# 3. Normalization
+#2. Normalization
 
 There are a couple different normalization methods used in DNA methylation analysis. There isn't a consensus on which method is the best. And metrics to evaluate how good normalization methods perform are vague and unclear. So we will try the different available normalization methods:
 
 * **Noob**: "Implements the noob background subtraction method with dye-bias normalization"
 * **Functional Normalization**: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
 * **Quantile Normalization**: "Implements stratified quantile normalization preprocessing"
+
+Minfi's preprocessing functions all exclusively take an RGset and convert into a downstream object (MSet, GRset).
 
 ### 3.1 Comparing normalization methodology
 
@@ -158,26 +156,26 @@ MSet.noob <- MSet.noob[order(featureNames(MSet.noob)), ]
 **preprocessFunnorm**
 We use preprocessFunnorm function to implement the functional normalization alogrithm which uses the internal control probes present on the array to infer between-array technical variation.
 ```{r}
-eth_preproc_funnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
-eth_preproc_funnorm <- eth_preproc_funnorm[order(featureNames(eth_preproc_funnorm)), ]
+GRset_funnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
+GRset_funnorm <- GRset_funnorm[order(featureNames(GRset_funnorm)), ]
 ```
 **preprocessQuantile**
 ```{r}
-eth_preproc_quant <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = FALSE, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
-eth_preproc_quant <- eth_preproc_quant[order(featureNames(eth_preproc_quant)),]
+GRset_quant <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = FALSE, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
+GRset_quant <- GRset_quant[order(featureNames(GRset_quant)),]
 ```
 Okay, now we have all of our data into objects that correspond to each normalization method. We will assess how they normalized based on the distribution of Type I and Type II probes after normalization.
 ```{r}
-probeTypes <- data.frame(Name = featureNames(MSet2.raw),
-                         Type = getProbeType(MSet2.raw)) #legendpos = "btm" is used to generate an error to remove the legend all together. 
-plotBetasByType(MSet2.raw[,1], main = "Raw")
+probeTypes <- data.frame(Name = featureNames(MSet),
+                         Type = getProbeType(MSet)) #legendpos = "btm" is used to generate an error to remove the legend all together. 
+plotBetasByType(MSet[,1], main = "Raw")
 ```
 > preprocessRaw does no normalization so we can see that the type I and type II (infinium I & II) probes have a distinct distribution. As we try different normalization methods we will assess how they perform by looking how close the distributions shift towards overlapping.
 
 ```{r}
 plotBetasByType(MSet.noob[,1], main = "Noob")
-plotBetasByType(getBeta(eth_preproc_funnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob")
-plotBetasByType(getBeta(eth_preproc_quant[,1]), probeTypes = probeTypes, main = "Quantile")
+plotBetasByType(getBeta(GRset_funnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob")
+plotBetasByType(getBeta(GRset_quant[,1]), probeTypes = probeTypes, main = "Quantile")
 ```
 > A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset.
 >  Hansen et al. 2014 suggests quantile normalization will be better for datasets where we are looking for small differences. FunNorm is more appropriate for when global changes are expected.
@@ -185,25 +183,38 @@ plotBetasByType(getBeta(eth_preproc_quant[,1]), probeTypes = probeTypes, main = 
 ### Sex check
 Here we use Minfi's preprocessFunnorm's built-in sex prediction function to verify that there were no sample mixups:
 ```{r}
-eth_preproc_funnorm@colData$sex
-predicted_sex <- eth_preproc_funnorm@colData$predictedSex
+GRset_funnorm@colData$sex
+predicted_sex <- GRset_funnorm@colData$predictedSex
 for (i in 1:length(predicted_sex)){
   if (predicted_sex[i] == "F") {predicted_sex[i] = "FEMALE"}
   else {predicted_sex[i] = "MALE"} }
-predicted_sex == eth_preproc_funnorm@colData$sex
+predicted_sex == GRset_funnorm@colData$sex
 ```
 > No sex-specific sample mix ups.
 
 ### Next we check for the presence of SNPs inside the probe body or CpG or at the nucleotide extension. Such probes will be removed.
 ```{r}
 # check presence of SNPs inside probe body or single nucleotide extensions
-snps <- getSnpInfo(eth_preproc_funnorm)
+snps <- getSnpInfo(GRset_funnorm)
 str(snps@listData$Probe_rs)
 
-eth_preproc_funnorm <- addSnpInfo(eth_preproc_funnorm)
+GRset_funnorm <- addSnpInfo(GRset_funnorm)
 # drop the probes that contain either a SNP at the CpG interrogation or at the single nucleotide extension
-eth_preproc_funnorm_rmSNP <- dropLociWithSnps(eth_preproc_funnorm, snps=c("SBE","CpG"), maf=0)
-eth_preproc_funnorm_rmSNP
+GRset_funnorm2 <- dropLociWithSnps(GRset_funnorm, snps=c("SBE","CpG"), maf=0)
+GRset_funnorm2
 ```
 
+```{r bad detection p value beadcount}
+MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) 
+gset <- mapToGenome(MSet2)
+gset <- dropLociWithSnps(gset, snps=c("SBE","CpG"), maf=0)
+gset
+```
+
+> We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
+> We started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes. SNP probes and Sex probes will also need to be removed. However, Minfi's normalization functions will automatically do this (may depend on the type of normalization used).
+> Now to remove these probes from our genomic ranges object
+
+```{r}
+```
 # 4. Export processed data files (data.txt, and des.txt)
