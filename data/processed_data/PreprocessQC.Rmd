@@ -96,11 +96,8 @@ GRset <- mapToGenome(RSet) #The function mapToGenome applied to a RatioSet objec
 gr <- granges(GRset) #to return the probe locations as a genomic ranges. 
 ```
 
-#2. QC
---------------------------------------------------------------------------------------------------------------------------------------------
-Note: I think we should move all of the QC to here, so that it is obvious that we do QC before normalization -victor
-Note: I'm just going to move your section over here Ming, -Victor
---------------------------------------------------------------------------------------------------------------------------------------------
+#2. Quality Control
+In this section we will use some tools from the Minfi package to see if there are any 'bad' samples, obvious outliers, and to remove non-useful probes. What is considered a 'bad' sample? Samples that have been processed poorly due to human error can have global unpredictable affects on DNAm readings. Smaller effects can be seen due to biases like male/female sex, or techinical artificats like row position or chip. Most of these biases we hope to identify in this section and correct for.
 
 Samples with lots of bad detection p value probes will appear as outliers in the following QC plots. Bad detection p value probes are basically probes that fail to be statistically different (p value > 0.01) from background intensity. Illumina has a set a of negative control probes that give us the 'background intensity value'.
 
@@ -136,13 +133,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
 
-
-```{r bad detection p values}
-bad_p <- detectionP(Eth_rgset, type = "m+u")
-MSet2 <- MSet[rowSums(bad_p <= 0.01) == ncol(bad_p),]
-```
-Went from `r nrow(MSet)` to 'r nrow(MSet2)' Probes
-
+We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
 ```{r beadcount}
 bead <- beadcount(Eth_rgset2)
 bead2 <- as.matrix(bead)
@@ -156,7 +147,7 @@ head(bead3)
 
 MSet2[!row.names(MSet2) %in% bead3$cpg,]
 
-pfilter(Eth_rgset2, pnthresh = 0.01) #we used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3 
+pfilter(Eth_rgset2, pnthresh = 0.01) 
 ```
 
 # 3. Normalization
@@ -167,18 +158,11 @@ Try different normalization:
 * **Functional Normalization**: "This function applies the preprocessNoob function as a first step for background substraction, and uses the first two principal components of the control probes to infer the unwanted variation"
 * **Quantile Normalization**: "Implements stratified quantile normalization preprocessing"
 
-### 3.1 Comparing preprocessing methodology
-
-**preprocessRaw**
-```{r}
-MSet.raw <- preprocessRaw(Eth_rgset) # converting the red and green channels into a matrix of methylated signals and a matrix of unmethylated signals.
-
-MSet.raw <- MSet.raw[order(featureNames(MSet.raw)), ]
-```
+### 3.1 Comparing normalization methodology
 
 **preprocessNoob**
 
-Then we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias. 
+First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for). 
 
 ```{r,noob}
 
