@@ -227,7 +227,7 @@ dim(GRset_funnorm2B)
 gsetFin2 <- semi_join(GRset_funnorm2B, gsetB, by = 'cpg')
 dim(gsetFin2)
 #464923 CpGs left
-gsetFin2 <- column_to_rownames(gsetFin2, 'cpg') #add cpg row names back
+gsetFin2 <- column_to_rownames(gsetFin2, 'cpg') #add cpg row names back (I found this reduces the file size significantly - this is kind of weird)
 head(gsetFin2) #yay
 ```
 # 4. Export processed data files (data.txt, and des.txt)
