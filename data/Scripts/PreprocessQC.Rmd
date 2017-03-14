@@ -62,7 +62,7 @@ We start with reading the .IDAT files and we read in a sample sheet, and then us
 ```{r, read data}
 #input the right base directory
 getwd() #input the right base directory
-setwd("./data/Raw Data/")
+setwd("../data/Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
 Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
