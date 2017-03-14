@@ -51,7 +51,6 @@ Installed the necessary dependencies by:
 library(wateRmelon)
 library(minfi)
 library(dplyr)
-library(ggplot2)
 library(tibble)
 ```
 
@@ -62,7 +61,7 @@ We start with reading the .IDAT files and we read in a sample sheet, and then us
 ```{r, read data}
 #input the right base directory
 getwd() #input the right base directory
-setwd("../data/Raw Data/")
+setwd("../Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
 Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
@@ -137,7 +136,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
 
-#2. Normalization
+#3. Normalization
 
 There are a couple different normalization methods used in DNA methylation analysis. There isn't a consensus on which method is the best. And metrics to evaluate how good normalization methods perform are vague and unclear. So we will try the different available normalization methods:
 
@@ -194,7 +193,10 @@ predicted_sex == GRset_funnorm@colData$sex
 ```
 > No sex-specific sample mix ups.
 
-### Next we check for the presence of SNPs inside the probe body or CpG or at the nucleotide extension. Such probes will be removed.
+###Probe filtering
+
+> Next we check for the presence of SNPs inside the probe body or CpG or at the nucleotide extension. Such probes will be removed.
+
 ```{r}
 # check presence of SNPs inside probe body or single nucleotide extensions
 snps <- getSnpInfo(GRset_funnorm)
