@@ -47,6 +47,7 @@ Installed the necessary dependencies by:
 #source("https://bioconductor.org/biocLite.R")
 #biocLite("wateRmelon")
 #biocLite('limma')
+#biocLite('minfi')
 library(wateRmelon)
 library(minfi)
 library(dplyr)
@@ -204,17 +205,27 @@ GRset_funnorm2 <- dropLociWithSnps(GRset_funnorm, snps=c("SBE","CpG"), maf=0)
 GRset_funnorm2
 ```
 
-```{r bad detection p value beadcount}
-MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) 
-gset <- mapToGenome(MSet2)
-gset <- dropLociWithSnps(gset, snps=c("SBE","CpG"), maf=0)
-gset
+```{r identify bad detection p value beadcount}
+MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) #removes all bad detection p value probes and bead count <3.
 ```
 
 > We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count < 3.
-> We started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes. SNP probes and Sex probes will also need to be removed. However, Minfi's normalization functions will automatically do this (may depend on the type of normalization used).
-> Now to remove these probes from our genomic ranges object
+> We started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes. 
 
-```{r}
+> Now to remove these probes from our genomic ranges object (normalized object)
+
+```{r remove bad detection pvalue probes and beadcount < 3 in normalized data}
+GRset_funnorm2B <- getBeta(GRset_funnorm2) #take out beta values
+GRset_funnorm2B <- rownames_to_column(as.data.frame(GRset_funnorm2B), 'cpg') #add rownames to a column
+
+gset <- mapToGenome(MSet2)
+gset <- dropLociWithSnps(gset, snps=c("SBE","CpG"), maf=0)
+gsetB <- getBeta(gset)
+gsetB <- rownames_to_column(as.data.frame(gsetB), 'cpg')
+dim(gsetB)
+dim(GRset_funnorm2B)
+
+gsetFin2 <- semi_join(GRset_funnorm2B, gsetB, by = 'cpg')
+dim(gsetFin2)
 ```
 # 4. Export processed data files (data.txt, and des.txt)
