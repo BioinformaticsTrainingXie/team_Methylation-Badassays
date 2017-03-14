@@ -52,6 +52,7 @@ library(wateRmelon)
 library(minfi)
 library(dplyr)
 library(ggplot2)
+library(tibble)
 ```
 
 #1.2 Load data
@@ -217,15 +218,20 @@ MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) #removes all bad detection p value
 ```{r remove bad detection pvalue probes and beadcount < 3 in normalized data}
 GRset_funnorm2B <- getBeta(GRset_funnorm2) #take out beta values
 GRset_funnorm2B <- rownames_to_column(as.data.frame(GRset_funnorm2B), 'cpg') #add rownames to a column
-
-gset <- mapToGenome(MSet2)
-gset <- dropLociWithSnps(gset, snps=c("SBE","CpG"), maf=0)
-gsetB <- getBeta(gset)
-gsetB <- rownames_to_column(as.data.frame(gsetB), 'cpg')
+gset <- mapToGenome(MSet2) #maps filtered data to genome so 
+gsetB <- getBeta(gset) #gsetB will act as filtering index to remove additional probes from the normalized data
+gsetB <- rownames_to_column(as.data.frame(gsetB), 'cpg') #dplyr requires rownames to be in colun for joining dataframes
 dim(gsetB)
 dim(GRset_funnorm2B)
 
 gsetFin2 <- semi_join(GRset_funnorm2B, gsetB, by = 'cpg')
 dim(gsetFin2)
+#464923 CpGs left
+gsetFin2 <- column_to_rownames(gsetFin2, 'cpg') #add cpg row names back
+head(gsetFin2) #yay
 ```
 # 4. Export processed data files (data.txt, and des.txt)
+```{r eval = FALSE}
+getwd()
+write.table(gsetFin2, '../processed_data/data.txt')
+```
