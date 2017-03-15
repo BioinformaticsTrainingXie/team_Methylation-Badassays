@@ -1,4 +1,4 @@
-##The Methylation Badsassays: Data
+## The Methylation Badsassays: Data
 
 Table of Contents:
 
@@ -18,6 +18,6 @@ Table of Contents:
   
 3. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Scripts)
   
-  This folder contains the scripts to process the raw data to processed data.
+  + This folder contains the scripts to process the raw data to processed data.
   
 4. [Processed Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/processed_data)
