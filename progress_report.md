@@ -43,7 +43,7 @@ Please see above sections for our thoughts on the analysis plan.
 - **Briefly and concisely explain your methodology and progress for the aims you have investigated so far. Which parts were modified and which parts remained the same?**
 
 
-- **Can you write down your rationale for the normalization? Refer to the density plots. Can you put a picture of the plots here from the knitted html file? **
+- **Can you write down your rationale for the normalization? Refer to the density plots. Can you put a picture of the plots here from the knitted html file?**
 
   There are a couple different normalization methods used in DNA methylation analysis; however, there isn't a consensus on which method is the best and metrics to evaluate how good normalization methods perform are vague and unclear. So we tried different available normalization methods to see which one works better. The normalization methods we tried are noob, functional normalization and quantile normalization. 
 
