@@ -16,4 +16,7 @@ Table of Contents:
   + one .idat file contains the unmethylated intensity profiles for all 450K CpG sites
   + Methylation is determined by taking the ratio of the two intensities at each site
   
-3. [Preprocessed Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/processed_data)
+3. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/Scripts)
+  This folder contains the scripts to process the raw data to processed data.
+  
+4. [Processed Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data/processed_data)
