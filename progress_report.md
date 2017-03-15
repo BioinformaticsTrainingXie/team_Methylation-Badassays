@@ -15,6 +15,7 @@
 * Nivi - Exploratory Analysis - Github organization 
 * Anni - Exploratory Analysis - Github organization / r markdown annotation
 * Michael - Accessory (will help out wherever is needed)
+
  Everybody will help out on the poster.
 
 
