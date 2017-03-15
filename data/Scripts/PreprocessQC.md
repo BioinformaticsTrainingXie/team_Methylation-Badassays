@@ -15,7 +15,7 @@ http://bioconductor.org/packages/release/bioc/manuals/minfi/man/minfi.pdf
 For the relevant paper with more comprehensive discussion of Minfi:
 https://academic.oup.com/bioinformatics/article/30/10/1363/267584/Minfi-a-flexible-and-comprehensive-Bioconductor
 
-#1.0 Introduction
+# 1.0 Introduction
 
 Minfi package separates data from annotation and annotation from array design. The annotation means how methylation loci are associated with gneomic locations and design means how probes on the array are matched with relevant color channels to produce the Meth and Unmeth signals. 
 
@@ -33,7 +33,7 @@ The following classes and their details:
 
 **GenomicRatioSet** represents the data as beta values (methylation ratios) or M-values (log ratios of beta values). Also, the methylation loci have been associated with genomic location.
 
-#1.1 Dependencies
+# 1.1 Dependencies
 
 Installed the necessary dependencies by: 
 
@@ -50,7 +50,7 @@ library(ggplot2)
 library(tibble)
 ```
 
-#1.2 Load data
+# 1.2 Load data
 
 We start with reading the .IDAT files and we read in a sample sheet, and then use the sample sheet to load the data into a RGChannelSet. 
 
@@ -206,7 +206,7 @@ getManifest(Eth_rgset) # manifest probe design information of the array.
 ```
 Manifest verifies that we are working with 450K data.
 
-#1.3 Create Classes - with no normalization
+# 1.3 Create Classes - with no normalization
 Generating **MethylSet**, which contains only the methylated and unmethylated signals, and **RatioSet**, which stores Beta vlues and/or M values instead of the methylated and unmethylated signals: 
 
 
@@ -229,7 +229,7 @@ GRset <- mapToGenome(RSet)
 The function mapToGenome() applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
 granges(GRset) can be used to return the probe locations as a genomic ranges. 
 
-#2. Quality Control (QC) - before normalization
+# 2.0 Quality Control (QC) - before normalization
 
 Before we do normalization we should remove samples that are globally much different than the rest. If a sample has too many failed probes or a very different distribution of methylation measurements, then this is an indication that something went technically wrong with the sample, and therefore carries unreliable data.
 
@@ -283,7 +283,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
 
-#2. Normalization
+# 2.1 Normalization
 
 There are a couple different normalization methods used in DNA methylation analysis. There isn't a consensus on which method is the best. And metrics to evaluate how good normalization methods perform are vague and unclear. So we will try the different available normalization methods:
 
@@ -293,7 +293,7 @@ There are a couple different normalization methods used in DNA methylation analy
 
 Minfi's preprocessing functions all exclusively take an RGset and convert into a downstream object (MSet, GRset).
 
-### 3.1 Comparing normalization methodology
+### 3.0 Comparing normalization methodology
 
 **preprocessNoob**
 First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for).
@@ -626,7 +626,7 @@ head(gsetFin2) #yay
 ## cg00381604         0.0432668        0.04411788        0.04181206
 ## cg20253340         0.3994270        0.33750644        0.28004296
 ```
-# 4. Export processed data files (data.txt, and des.txt)
+# 4.0 Export processed data files (data.txt, and des.txt)
 
 ```r
 getwd()
