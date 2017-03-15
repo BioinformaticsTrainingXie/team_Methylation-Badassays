@@ -124,7 +124,11 @@ $(document).ready(function () {
 <div id="what-has-changed-based-on-the-final-proposal" class="section level3">
 <h3>What has changed based on the final proposal</h3>
 <ul>
-<li><p><strong>Did your dataset change? If so, why?</strong></p></li>
+<li><strong>Did your dataset change? If so, why?</strong></li>
+</ul>
+<p>Went from 485512 to 464923 CpG sites.</p>
+<p>We removed probes with a bad detection p value &gt; 0.01, and a beadcount of &lt; 3. ‘Bad detection p value &gt; 0.01’ probes are probes that failed to be significantly different than the technical negative control probes on the Array provided by Illummina. Beadcount &lt; 3 probes are those probes that were measured by less than 3 beads and are therefore unreliable measurements of the true methylation quantity. We also normalized Type I and Type II probes. See below for discussion and graphing. No ‘bad’ samples (major outliers) were identified.</p>
+<ul>
 <li><p><strong>Have you decided to do a different analysis than what was mentioned in your proposal? If so, Why?</strong></p></li>
 <li><p><strong>Are there any changes in task assignments of group members?</strong></p></li>
 </ul>
@@ -141,7 +145,18 @@ $(document).ready(function () {
 <div id="what-is-the-progress-of-the-analyses" class="section level3">
 <h3>What is the progress of the analyses</h3>
 <ul>
-<li><p><strong>Since your initial proposal, you should have decided more concretely on what methods to use for each step of your analyses, and employed some of those methods.</strong></p></li>
+<li><strong>Since your initial proposal, you should have decided more concretely on what methods to use for each step of your analyses, and employed some of those methods.</strong></li>
+</ul>
+<p>Because we already discussed the changes to our plan for the analysis in the above section, in brief, here is what our current (still deciding) plan for the methodology:</p>
+<ul>
+<li>Decide on a model-(logistic regression, glmnet, knn, SVM)
+<ul>
+<li>Leaning towards glmnet (See Horvath et al. 2013 - built an age-predictor on 27k</li>
+</ul></li>
+<li>Will check out caret and glmnet R packages to implement this in R</li>
+</ul>
+<p>Please see above sections for our thoughts on the analysis plan.</p>
+<ul>
 <li><p><strong>Briefly and concisely explain your methodology and progress for the aims you have investigated so far. Which parts were modified and which parts remained the same?</strong></p></li>
 <li><p><strong>What R packages or other tools are you using for your analyses?</strong></p></li>
 <li><p><strong>Provide the links to any markdown reports within your repo to refer to the relevant analysis.</strong></p></li>
