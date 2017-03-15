@@ -8,6 +8,16 @@
 
 - **Are there any changes in task assignments of group members?**
 
+  There are no major changes to team members task. Some tasks will be assigned that are more specific than what was initially proposed. Such tasks are outlined below (and subject to change as the project progresses):
+  
+* Victor - Predictive Modeling Analysis (research on model selection, workflow, and coding)
+* Ming - Predictive Modeling Analysis (research on model selection, workflow, and coding)
+* Nivi - Exploratory Analysis - Github organization 
+* Anni - Exploratory Analysis - Github organization / r markdown annotation
+* Michael - Accessory (will help out wherever is needed)
+ Everybody will help out on the poster.
+
+
 
 
 ### What is the progress of the analyses 
@@ -21,7 +31,7 @@
 - **Provide the links to any markdown reports within your repo to refer to the relevant analysis.**
 
 
-**Referencese**
+
 
 
 
@@ -37,3 +47,7 @@
 
 
 ### Results 
+
+
+
+**References**
