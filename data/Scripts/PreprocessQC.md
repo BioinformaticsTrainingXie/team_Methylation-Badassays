@@ -283,7 +283,7 @@ mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 
 > PM58 and PM29 are from different ethnic groups but cluster closer together than they do to the rest of the samples in their group. PM130 and PM158 are also noted.
 
-# 2.1 Normalization
+# 3.0 Normalization
 
 There are a couple different normalization methods used in DNA methylation analysis. There isn't a consensus on which method is the best. And metrics to evaluate how good normalization methods perform are vague and unclear. So we will try the different available normalization methods:
 
@@ -293,7 +293,7 @@ There are a couple different normalization methods used in DNA methylation analy
 
 Minfi's preprocessing functions all exclusively take an RGset and convert into a downstream object (MSet, GRset).
 
-### 3.0 Comparing normalization methodology
+# 3.1 Comparing normalization methodology
 
 **preprocessNoob**
 First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for).
