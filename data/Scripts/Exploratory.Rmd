@@ -32,15 +32,14 @@ setwd("../processed_data/")
 
 #data import is not working correctly, read_delim is the only function that gets close
 #read.delim, read.csv don't work
-#read_delim problem: row names are assigned to as first sample values, fine sample not imported
+#read_delim problem: row names are assigned to as first sample values, final sample not imported
 #data <- read_delim("data.txt"," ", escape_double = FALSE, trim_ws = TRUE)
 
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
 #trying to get metadata and data into one dataframe to do exploratory visualizations, not possible because data is too big
-design$Samplename
 
-colnames(data) <- c(as.character(design$Samplename))
+#colnames(data) <- c(as.character(design$Samplename))
 
 #full <- cbind(design, t(data))
 
