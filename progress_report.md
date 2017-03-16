@@ -107,7 +107,7 @@ We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organiz
 
 See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md).
 
-(Nivi: please paste the link to you preliminary analysis of the data. here)
+See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md).
 
 ### References:
 
@@ -136,4 +136,4 @@ Unfortunately we were unable to produce significant results at this point in tim
 
 ##### Did you have any positive results? If no, postulate a discussion as to why that may be. Provide plots and/or tables to present your results. - List some challenges that you encountered? How will you address them?
 =======
-##### What are your primary results? We've done some preliminary exploratory analysis. Here we are showing that we've done this and this... (Nivi I think this is the best place to put your plots and comments here. Put a link to your script in the above section where your name is :) )
+##### What are your primary results? We tried to do some preliminary exploratory analysis: [Here is an md describing snafus](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md) and the start of an [Rmd](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory2.Rmd) working off of the pre processing script.
