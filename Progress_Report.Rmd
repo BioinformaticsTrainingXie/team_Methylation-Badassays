@@ -10,21 +10,18 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ## Progress report (7 pts) 
-```{r}
-# progress_report.md.
-```
 
 ### Section 1: What has changed based on the final proposal (1 pt.)
 
 ##### S.1.1: Did your dataset change? If so, why?
 
-Went from 485512 to 464923 CpG sites.
+  Went from 485512 to 464923 CpG sites.
 
-We removed probes with a bad detection p value > 0.01, and a beadcount of < 3.  ‘Bad detection p value > 0.01’ probes are probes that failed to be significantly different than the technical negative control probes on the Array provided by Illummina. Beadcount < 3 probes are those probes that were measured by less than 3 beads and are therefore unreliable measurements of the true methylation quantity. We also normalized Type I and Type II probes. See below for discussion on how we chose which normalization method to use. No ‘bad’ samples (major outliers) were identified. 
+  We removed probes with a bad detection p value > 0.01, and a beadcount of < 3.  ‘Bad detection p value > 0.01’ probes are probes that failed to be significantly different than the technical negative control probes on the Array provided by Illummina. Beadcount < 3 probes are those probes that were measured by less than 3 beads and are therefore unreliable measurements of the true methylation quantity. We also normalized Type I and Type II probes. See below for discussion on how we chose which normalization method to use. No ‘bad’ samples (major outliers) were identified. 
 
 ##### S.1.2: Have you decided to do a different analysis than what was mentioned in your proposal? If so, Why?
 
-One way we can think of, in order to identify CpG sites that are helpful in predicting ethnicity, is using classification methods like logistic regression:
+  One way we can think of, in order to identify CpG sites that are helpful in predicting ethnicity, is using classification methods like logistic regression:
 
 1) Training step:
 
@@ -46,7 +43,7 @@ One way we can think of, in order to identify CpG sites that are helpful in pred
 
 ##### S.1.3: Are there any changes in task assignments of group members?
 
-There are no major changes to team members task. Some tasks will be assigned that are more specific than what was initially proposed. Such tasks are outlined below (and subject to change as the project progresses):
+  There are no major changes to team members task. Some tasks will be assigned that are more specific than what was initially proposed. Such tasks are outlined below (and subject to change as the project progresses):
 
 Victor - Predictive Modeling Analysis (research on model selection, workflow, and coding)
 
@@ -64,7 +61,7 @@ Everybody will help out on the poster.
 
 ##### S.2.1: Since your initial proposal, you should have decided more concretely on what methods to use for each step of your analyses, and employed some of those methods.
 
-Because we already discussed the changes to our plan for the analysis in the above section, in brief, here is what our current (still deciding) plan for the methodology:
+  Because we already discussed the changes to our plan for the analysis in the above section, in brief, here is what our current (still deciding) plan for the methodology:
 
 - Decide on a model - (logistic regression, glmnet, knn, SVM)
 
@@ -76,15 +73,13 @@ Please see above sections for our thoughts on the analysis plan.
 
 ##### S.2.2: Briefly and concisely explain your methodology and progress for the aims you have investigated so far. Which parts were modified and which parts remained the same?
 
-In summary, we have preprocessed our data (took longer than we anticipated!) into a format usable for analysis. Now, what remains is building the classifier and predicting on our testing set. We have progressed in these aspects mainly on the theoretical level - we have discussed it and are narrowing down the workflow and important decisions to be made (model selection). We have also identified a few R packages that we can use (caret, glmnet).
+  In summary, we have preprocessed our data (took longer than we anticipated!) into a format usable for analysis. Now, what remains is building the classifier and predicting on our testing set. We have progressed in these aspects mainly on the theoretical level - we have discussed it and are narrowing down the workflow and important decisions to be made (model selection). We have also identified a few R packages that we can use (caret, glmnet).
 
-We also are doing some preliminary exploratory analysis to see the global heterogeneity and see if our samples are relatively represented on the additional covariates (gestational age, sex). 
+  We also are doing some preliminary exploratory analysis to see the global heterogeneity and see if our samples are relatively represented on the additional covariates (gestational age, sex). 
 
 ##### S.2.3: Can you write down your rationale for the normalization? Refer to the density plots. Can you put a picture of the plots here from the knitted html file? 
 
-Normalization:
-
-It is important to normalize 450k data because of the technical biases introduced by the two probe types that populate these arrays [4]. The two types of probes found on the 450k array are classified as ‘Type I’ and ‘Type II’. Due to the inherent differences of the technology behind these designs, each class has a particular bias towards measurement of methylation. If we plot the beta value (measurement of DNAm) of all type I  (infinium I) and type II (Infinium II) probes (figure 1), we can see that their distributions are dissimilar.
+  It is important to normalize 450k data because of the technical biases introduced by the two probe types that populate these arrays [4]. The two types of probes found on the 450k array are classified as ‘Type I’ and ‘Type II’. Due to the inherent differences of the technology behind these designs, each class has a particular bias towards measurement of methylation. If we plot the beta value (measurement of DNAm) of all type I  (infinium I) and type II (Infinium II) probes (figure 1), we can see that their distributions are dissimilar.
 
 Figure 1)
 
@@ -109,20 +104,17 @@ Figure 2c)
 
 ![Quantile](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-3.png)
 
-A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset. We chose functional normalization, but are unsure whether Quantile would be better, or if the difference is negligible.
+  A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset. We chose functional normalization, but are unsure whether Quantile would be better, or if the difference is negligible.
 
 ##### S.2.4: What R packages or other tools are you using for your analyses? You do not need to provide your scripts in your report.
 
-We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organizing / wrangling, and ‘ggplot2’ for graphing.
+  We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organizing / wrangling, and ‘ggplot2’ for graphing.
 
 ##### S.2.5: Provide the links to any markdown reports within your repo to refer to the relevant analysis.
 
-The link to [scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.Rmd) for processing the raw data to data/ processed data.
+  The link to [scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) for processing the raw data to data/ processed data.
 
-Anni: Nivi, please paste the link to you preliminary analysis of the data.
-
-
-Provide references to the packages (minfi, wateRmelon mainly) we used. Maybe a ref for normalization procedures. Can someone pull up a citation for the Caret package for above?
+Nivi: please paste the link to you preliminary analysis of the data.
 
 ### References:
 
