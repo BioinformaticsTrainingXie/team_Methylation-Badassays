@@ -1,0 +1,50 @@
+---
+title: "Exploratory"
+author: "Nivretta Thatra"
+date: "March 15, 2017"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Installed the necessary dependencies by: 
+
+```{r, load libraries, message=FALSE}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("wateRmelon")
+#biocLite('limma')
+#biocLite('minfi')
+library(wateRmelon)
+library(minfi)
+library(dplyr)
+library(tidyverse)
+library(readr)
+```
+
+# 1.2 Load data
+
+Unzip data file first, then load in the txt file.
+
+```{r, read data}
+#input the right base directory
+getwd() #input the right base directory
+setwd("../processed_data/")
+
+#samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
+
+data <- read_delim("data.txt", " ", escape_double = FALSE, trim_ws = TRUE)
+
+design <- read.csv("des.txt", sep="\t", header=TRUE)
+
+design$Samplename
+
+colnames(data) <- c(as.character(design$Samplename))
+
+full <- cbind(design, t(data))
+
+
+```
+
+
