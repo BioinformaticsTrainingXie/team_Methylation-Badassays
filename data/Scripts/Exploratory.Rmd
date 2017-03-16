@@ -23,27 +23,51 @@ library(tidyverse)
 library(readr)
 ```
 
-# 1.2 Load data
+##Load data
 
-Unzip data file first, then load in the txt file.
-
+Tried to load preprocessed data in attempt to work from it directly rather than having to regenerate it from preprocessing script...didn't work.
 ```{r, read data}
-#input the right base directory
-getwd() #input the right base directory
+
 setwd("../processed_data/")
 
-#samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
-
-data <- read_delim("data.txt", " ", escape_double = FALSE, trim_ws = TRUE)
+#data import is not working correctly, read_delim is the only function that gets close
+#read.delim, read.csv don't work
+#read_delim problem: row names are assigned to as first sample values, fine sample not imported
+#data <- read_delim("data.txt"," ", escape_double = FALSE, trim_ws = TRUE)
 
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
+#trying to get metadata and data into one dataframe to do exploratory visualizations, not possible because data is too big
 design$Samplename
 
 colnames(data) <- c(as.character(design$Samplename))
 
-full <- cbind(design, t(data))
+#full <- cbind(design, t(data))
 
+
+```
+
+##Plotting
+
+Ideally we'd plot methylation at a random CpG sight and see how it varies with covariates. Below is sample code for how we'd that, if data loading was working.
+
+```{r, eval=FALSE}
+#Sample code
+
+#random cpg site
+probe_row <- 2000
+
+#get the site name 
+probe_name <- colnames(full)[probe_row]
+
+ggplot(full, aes(x = as.factor(time_num), y = full[probe_row])) + 
+  geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
+  geom_jitter(width = 0.3) + 
+  facet_wrap(~Sample_Group) + 
+  xlab("Gestational Age") + 
+  ylab("Beta values") +
+  ggtitle(paste("Beta values for CpG site", probe_name)) +
+  stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 
 ```
 
