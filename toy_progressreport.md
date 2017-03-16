@@ -77,7 +77,9 @@ Normalization:
 
 It is important to normalize 450k data because of the technical biases introduced by the two probe types that populate these arrays \[4\]. The two types of probes found on the 450k array are classified as ‘Type I’ and ‘Type II’. Due to the inherent differences of the technology behind these designs, each class has a particular bias towards measurement of methylation. If we plot the beta value (measurement of DNAm) of all type I (infinium I) and type II (Infinium II) probes (figure 1), we can see that their distributions are dissimilar.
 
-Figure 1. ![Raw](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-12-1.png)
+Figure 1)
+
+![Raw](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-12-1.png)
 
 There are a couple different normalization methods used in DNA methylation analysis; however, there isn't a consensus on which method is the best and metrics to evaluate how good normalization methods perform are vague and unclear. So we tried different available normalization methods to see which one works better. The normalization methods we tried are noob, functional normalization and quantile normalization.
 
@@ -85,11 +87,17 @@ We first tried noob background subtraction method with dye-bias normalization (t
 
 The plots we obtained by applying the three normalization methods are:
 
-Figure 2a) ![Noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-1.png)
+Figure 2a)
 
-Figure 2b) ![funNorm\_noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-2.png)
+![Noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-1.png)
 
-Figure 2c) ![Quantile](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-3.png)
+Figure 2b)
+
+![funNorm\_noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-2.png)
+
+Figure 2c)
+
+![Quantile](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-3.png)
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset. We chose functional normalization, but are unsure whether Quantile would be better, or if the difference is negligible.
 
