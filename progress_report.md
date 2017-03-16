@@ -105,9 +105,9 @@ We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organiz
 
 ##### S.2.5: Provide the links to any markdown reports within your repo to refer to the relevant analysis.
 
-The link to [scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) for processing the raw data to data/ processed data.
+See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md).
 
-Nivi: please paste the link to you preliminary analysis of the data.
+(Nivi: please paste the link to you preliminary analysis of the data. here)
 
 ### References:
 
@@ -129,10 +129,9 @@ Nivi: please paste the link to you preliminary analysis of the data.
 
 ### Section 3: Results (2 pts.)
 
-##### What are your primary results?
+Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing .md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
 
-##### Were you able to answer your hypothesis?
+##### What are your primary results? We've done some preliminary exploratory analysis. Here we are showing that we've done this and this... (Nivi I think this is the best place to put your plots and comments here. Put a link to your script in the above section where your name is :) )
 
-##### Did you have any positive results? If no, postulate a discussion as to why that may be. Provide plots and/or tables to present your results. - List some challenges that you encountered? How will you address them?
 
 Please provide a link to your progress\_report.md file in your group repo README.md. This is a group-level deliverable so you’d submit it by opening an issue in your group repo can call it “Progress report of \[group name\]”“, and provide the revision SHA and tag the TAs and instructors who are mentors of your project by March 15th, 2017.
