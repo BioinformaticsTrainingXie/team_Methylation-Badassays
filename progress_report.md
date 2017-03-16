@@ -20,7 +20,7 @@ One way we can think of, in order to identify CpG sites that are helpful in pred
 
 1.  Training step:
 
-    1.  Fit logistic regression with Prob(ethnicity ="Asian") as the response and all CpG sites as predictors, use regularization techniques (LASSO/elastic net) to choose which CpG sites should be kept. We plan to try glmnet model from "caret"" package (there are other functions we can try as well)
+    1.  Fit logistic regression with Prob(ethnicity ="Asian") as the response and all CpG sites as predictors, use regularization techniques (LASSO/elastic net) to choose which CpG sites should be kept. We plan to try glmnet model from "caret" package (there are other functions we can try as well)
 
     2.  Cross-validate our model (5/10 fold CV);
 
@@ -81,7 +81,7 @@ Figure 1)
 
 There are a couple different normalization methods used in DNA methylation analysis; however, there isn't a consensus on which method is the best and metrics to evaluate how good normalization methods perform are vague and unclear. So we tried different available normalization methods to see which one works better. The normalization methods we tried are noob, functional normalization and quantile normalization.
 
-We first tried noob background subtraction method with dye-bias normalization (the function preprocessNoob in Minfi (Fig. 2a) which estimates background noise from the out-of-band probes and remove it for each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (1). We then tried functional normalization (the preprocessFunnorm function in Minfi) (Fig. 2b)which uses the internal control probes present on the array to infer between-array technical variation (2). In default first step of preprocessFunnorm function is background subtraction using preprocessNoob and then uses the first two principal components of the control probes to infer the unwanted variation. This functional normalization has been shown particularly useful when global changes are expected. Finally, we used quantile normalization (3) which is applied to the methylation and demethylation intensities separately. In this normalization method, the function preprocessQuantile (Fig. 2c) first normalizes the type II probes across samples and then interpolates a reference distribution to which the type I probes were normalized; therefore, the distribution of type I and type II signals is forced to be the same. The quantile normalization is suggested for datasets where small differences rather than global changes are expected.
+We first tried noob background subtraction method with dye-bias normalization (the function preprocessNoob in Minfi (Fig. 2a) which estimates background noise from the out-of-band probes and remove it for each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (1). We then tried functional normalization (the preprocessFunnorm function in Minfi) (Fig. 2b) which uses the internal control probes present on the array to infer between-array technical variation (2). In default first step of preprocessFunnorm function is background subtraction using preprocessNoob and then uses the first two principal components of the control probes to infer the unwanted variation. This functional normalization has been shown particularly useful when global changes are expected. Finally, we used quantile normalization (3) which is applied to the methylation and demethylation intensities separately. In this normalization method, the function preprocessQuantile (Fig. 2c) first normalizes the type II probes across samples and then interpolates a reference distribution to which the type I probes were normalized; therefore, the distribution of type I and type II signals is forced to be the same. The quantile normalization is suggested for datasets where small differences rather than global changes are expected.
 
 The plots we obtained by applying the three normalization methods are:
 
@@ -105,9 +105,9 @@ We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organiz
 
 ##### S.2.5: Provide the links to any markdown reports within your repo to refer to the relevant analysis.
 
-The link to [scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) for processing the raw data to data/ processed data.
+See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md).
 
-Nivi: please paste the link to you preliminary analysis of the data.
+(Nivi: please paste the link to you preliminary analysis of the data. here)
 
 ### References:
 
@@ -129,8 +129,11 @@ Nivi: please paste the link to you preliminary analysis of the data.
 
 ### Section 3: Results (2 pts.)
 
-##### What are your primary results?
+Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing .md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
 
+<<<<<<< HEAD
 ##### Were you able to answer your hypothesis?
 
 ##### Did you have any positive results? If no, postulate a discussion as to why that may be. Provide plots and/or tables to present your results. - List some challenges that you encountered? How will you address them?
+=======
+##### What are your primary results? We've done some preliminary exploratory analysis. Here we are showing that we've done this and this... (Nivi I think this is the best place to put your plots and comments here. Put a link to your script in the above section where your name is :) )
