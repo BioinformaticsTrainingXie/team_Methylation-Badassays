@@ -1,10 +1,7 @@
 ---
 title: "Exploratory2"
 author: "Nivretta"
-output: 
-  github_document: 
-    keep_md: yes
-    toc: yes
+output: github_document
 ---
 
 #1.0 PREPROCESSING: INTRODUCTION
@@ -30,14 +27,16 @@ The following classes and their details:
 Installed the necessary dependencies by: 
 
 ```{r, load libraries, message=FALSE}
-#source("https://bioconductor.org/biocLite.R")
+source("https://bioconductor.org/biocLite.R")
 #biocLite("wateRmelon")
 #biocLite('limma')
 #biocLite('minfi')
-#biocLite('IlluminaHumanMethylation450kmanifest.db')
-library(wateRmelon)
-library(IlluminaHumanMethylation450kmanifest.db)
-library(minfi)
+#biocLite('IlluminaHumanMethylation450kmanifest') 
+#biocLite('IlluminaHumanMethylation450kanno.ilmn12.hg19')
+library(wateRmelon) #working
+library(IlluminaHumanMethylation450kmanifest)
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(minfi) #working
 library(dplyr)
 library(tibble)
 ```
@@ -46,19 +45,19 @@ library(tibble)
 
 We start with reading the .IDAT files and we read in a sample sheet, and then use the sample sheet to load the data into a RGChannelSet. 
 
-```{r, read data}
+```{r, read data, results="hide"}
 #input the right base directory
 getwd() #input the right base directory
 setwd("../Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
 Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
-#Eth_rgset2 <- read.metharray.exp(targets = samplesheet, extended = TRUE) #extended Rgset to get bead count info
+Eth_rgset2 <- read.metharray.exp(targets = samplesheet, extended = TRUE) #extended Rgset to get bead count info
 ```
 
 The Eth_rgset class contains the intensities of the internal control probes as well and as our data were read from a data sheet experiment, the phenotype data is also stored in the Eth_rgset and can be accessed via the accessor command pData.
 
-```{r, pData}
+```{r, pData, results="hide"}
 pheno <- pData(Eth_rgset) # phenotype data (from sample sheet)
 pheno[,1:6]
 getManifest(Eth_rgset) # manifest probe design information of the array.
@@ -69,18 +68,18 @@ Manifest verifies that we are working with 450K data.
 
 Generating **MethylSet**, which contains only the methylated and unmethylated signals, and **RatioSet**, which stores Beta vlues and/or M values instead of the methylated and unmethylated signals: 
 
-```{r}
+```{r, results="hide"}
 MSet <- preprocessRaw(Eth_rgset) # Processes raw intensity data into Methylated and Unmethylated values (can conver to Beta or 'M' values). Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s, corresponding to unmethylated and methylated respectively.
 ```
 preprocessRaw() converts raw intensity data (in the form of IDAT files) into Methylated and Unmethylated values. These values are called Beta or M-values. Beta values are the estimate of methylation level at each position using the ratio of intensities between methylated and unmethylated probes. Beta values are expected to follow a bimodel distribution of roughly 0s and 1s. M-values are the same information just on a log scale, which has been shown to be better for some downstream statistical analyses.
 
-```{r}
+```{r, results="hide"}
 RSet <- ratioConvert(MSet, what = "both", keepCN = TRUE) #CN is the sum of the methylated and unmethylated signals
 ```
 ratioConvert() consolidates methylated and unmethylated values per CpG site into one value (a ratio of Methylated / Unmethylated).
 
 Get **GenomicRatioSet**: 
-```{r}
+```{r, results="hide"}
 GRset <- mapToGenome(RSet) 
 ```
 The function mapToGenome() applied to a RatioSet object adds genomic coordinates to each probe together with some additional annotation information.
@@ -94,32 +93,32 @@ In this section we will use some tools from the Minfi package to see if there ar
 
 Samples with lots of bad detection p value probes will appear as outliers in the following QC plots. Bad detection p value probes are basically probes that fail to be statistically different (p value > 0.01) from background intensity. Illumina has a set a of negative control probes that give us the 'background intensity value'.
 
-```{r}
+```{r, results="hide"}
 qc <- getQC(MSet)
 plotQC(qc)
 ```
 > The plot estimates samples-specific probe intensities from the MethylSet, comparing methylation probes (M) against unmethylation probes (UM). Intensities for each M and UM are plotted to ensure that they have similar intensities and that the intensities stronger than 10. Bad samples (with lots of bad detection p value probes) will cluster together and lower on the plot. We can see that our samples seem to cluster all together in the 1st quadrant with no obvious outliers.
 
-```{r}
+```{r, results="hide"}
 densityPlot(MSet, sampGroups = pheno$Ethnicity) #bit hard to see
 ```
 > This is a density plot of the beta values for all samples annotated by ethnicity. We can see that there are no obvious outliers as each sample follows a relatively similar average beta value distribution across all probes.
 
-```{r}
+```{r, results="hide"}
 densityBeanPlot(MSet, sampGroups = pheno$Ethnicity)
 ```
 > Similar to the density plot above, but plotted as a bean plot, color coded by ethnicity. Again, no obvious outliers.
 
-```{r}
+```{r, results="hide"}
 controlStripPlot(Eth_rgset, controls="BISULFITE CONVERSION II") #Red is type 1, green is type 2
 ```
 > The 450k array contains several internal control probes that can be used to assess the quality control of different sample preparation steps, in this case, bisulfite conversion. Each control probe is plotted as a strip plot here, showing the consistency of each control probe, suggesting that the changes in our probe sets are not due to errors in preparation.
 
-```{r}
+```{r, results="hide"}
 mdsPlot(Eth_rgset, sampNames = pheno$Sample_Name, sampGroups = pheno$Ethnicity)
 ```
 
-> The Multi-Dimensional Scaling (MDS) plot showss a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
+> The Multi-Dimensional Scaling (MDS) plot shows a 2D projection of beta values. The distance between samples show their similarity to each other. It is used as a mean to visually conceptualize the data without making claims to its significance.
 
 > So far all of our QC checks have shown no evidence that there are any obvious outliers or samples that might need to be removed. Here is our first piece of evidence that some samples might be more *interesting*. 
 
@@ -139,30 +138,30 @@ Minfi's preprocessing functions all exclusively take an RGset and convert into a
 
 **preprocessNoob**
 First, we use preprocessNoob function to implement the noob background subtraction method with dye-bias normalization. In this background subtraction method, background noise is estimated from the out-of-band probes and is removed from each sample separately, while the dye-bias normalization utilizes a subset of the control probes to estimate the dye bias (red and green dyes have certain hybridization biases that need to be corrected for).
-```{r}
+```{r, results="hide"}
 MSet.noob <- preprocessNoob(Eth_rgset)
 MSet.noob <- MSet.noob[order(featureNames(MSet.noob)), ]
 ```
 **preprocessFunnorm**
 We use preprocessFunnorm function to implement the functional normalization alogrithm which uses the internal control probes present on the array to infer between-array technical variation.
-```{r}
+```{r, results="hide"}
 GRset_funnorm <- preprocessFunnorm(Eth_rgset, nPCs = 2, sex = NULL, bgCorr = TRUE, dyeCorr = TRUE, verbose = TRUE)
 GRset_funnorm <- GRset_funnorm[order(featureNames(GRset_funnorm)), ]
 ```
 **preprocessQuantile**
-```{r}
+```{r, results="hide"}
 GRset_quant <- preprocessQuantile(Eth_rgset, fixOutliers = TRUE, removeBadSamples = FALSE, quantileNormalize = TRUE, stratified = TRUE, mergeManifest = FALSE, sex = NULL)
 GRset_quant <- GRset_quant[order(featureNames(GRset_quant)),]
 ```
 Okay, now we have all of our data into objects that correspond to each normalization method. We will assess how they normalized based on the distribution of Type I and Type II probes after normalization.
-```{r}
+```{r, results="hide"}
 probeTypes <- data.frame(Name = featureNames(MSet),
                          Type = getProbeType(MSet)) #legendpos = "btm" is used to generate an error to remove the legend all together. 
 plotBetasByType(MSet[,1], main = "Raw")
 ```
 > preprocessRaw does no normalization so we can see that the type I and type II (infinium I & II) probes have a distinct distribution. As we try different normalization methods we will assess how they perform by looking how close the distributions shift towards overlapping.
 
-```{r}
+```{r, results="hide"}
 plotBetasByType(MSet.noob[,1], main = "Noob")
 plotBetasByType(getBeta(GRset_funnorm[,1]), probeTypes = probeTypes, main = "funNorm_noob")
 plotBetasByType(getBeta(GRset_quant[,1]), probeTypes = probeTypes, main = "Quantile")
@@ -172,7 +171,7 @@ plotBetasByType(getBeta(GRset_quant[,1]), probeTypes = probeTypes, main = "Quant
 
 ##3.2 Sex check
 Here we use Minfi's preprocessFunnorm's built-in sex prediction function to verify that there were no sample mixups:
-```{r}
+```{r, results="hide"}
 GRset_funnorm@colData$sex
 predicted_sex <- GRset_funnorm@colData$predictedSex
 for (i in 1:length(predicted_sex)){
@@ -186,7 +185,7 @@ predicted_sex == GRset_funnorm@colData$sex
 
 > Next we check for the presence of SNPs inside the probe body or CpG or at the nucleotide extension. Such probes will be removed.
 
-```{r}
+```{r, results="hide"}
 # check presence of SNPs inside probe body or single nucleotide extensions
 snps <- getSnpInfo(GRset_funnorm)
 str(snps@listData$Probe_rs)
@@ -197,7 +196,7 @@ GRset_funnorm2 <- dropLociWithSnps(GRset_funnorm, snps=c("SBE","CpG"), maf=0)
 GRset_funnorm2
 ```
 
-```{r identify bad detection p value beadcount}
+```{r identify bad detection p value beadcount, results="hide"}
 MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) #removes all bad detection p value probes and bead count <3.
 ```
 
@@ -206,7 +205,7 @@ MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) #removes all bad detection p value
 
 > Now to remove these probes from our genomic ranges object (normalized object)
 
-```{r remove bad detection pvalue probes and beadcount < 3 in normalized data}
+```{r remove bad detection pvalue probes and beadcount < 3 in normalized data, results="hide"}
 GRset_funnorm2B <- getBeta(GRset_funnorm2) #take out beta values
 GRset_funnorm2B <- rownames_to_column(as.data.frame(GRset_funnorm2B), 'cpg') #add rownames to a column
 gset <- mapToGenome(MSet2) #maps filtered data to genome so 
@@ -226,8 +225,41 @@ head(gsetFin2) #yay
 
 
 #4.0 Exploratory Analysis
-```{r eval = FALSE}
+```{r}
+design <- read.csv("des.txt", sep="\t", header=TRUE)
 
+colnames(gsetFin2) <- c(as.character(design$Samplename))
+
+full <- cbind(design, t(gsetFin2))
+
+
+#random cpg site from 1 to 464923
+probe_row <- 2000
+
+#get the site name 
+probe_name <- colnames(full)[probe_row]
+
+#plot y = beta values for random cpg site for all samples, x= gestational age, plots divided by sample group, points colored by ethnicity
+ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) + 
+  #geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
+  geom_jitter(width = 0.5) + 
+  facet_wrap(~Sample_Group) + 
+  xlab("Gestational Age") + 
+  ylab("Beta values") +
+  ggtitle(paste("Beta values for CpG site", probe_name)) #+
+  #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
+
+#beta values for random cpG site, box plots of ethnicity
+ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
+  geom_boxplot(aes(fill=Ethnicity), show.legend = FALSE) + 
+  geom_jitter(width = 0.3) + 
+  facet_wrap(~sex) + 
+  xlab("Ethnicity") + 
+  ylab("Beta values") +
+  ggtitle(paste("Beta values for CpG site", probe_name)) +
+  stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 
 
 ```
+
+
