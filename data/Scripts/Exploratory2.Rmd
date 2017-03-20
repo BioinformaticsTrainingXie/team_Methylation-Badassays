@@ -45,7 +45,7 @@ library(tibble)
 
 We start with reading the .IDAT files and we read in a sample sheet, and then use the sample sheet to load the data into a RGChannelSet. 
 
-```{r, read data}
+```{r, read data, results='hide'}
 #input the right base directory
 getwd() #input the right base directory
 setwd("../Raw Data/")
@@ -226,6 +226,7 @@ head(gsetFin2) #yay
 
 #4.0 Exploratory Analysis
 ```{r}
+setwd("../Raw Data/")
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
 colnames(gsetFin2) <- c(as.character(design$Samplename))

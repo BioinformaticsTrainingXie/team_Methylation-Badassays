@@ -2,8 +2,6 @@ Exploratory2
 ================
 Nivretta
 
-### All output of preprocessing portion will be supressed. Please see preprocessing md file for more.
-
 1.0 PREPROCESSING: INTRODUCTION
 ===============================
 
@@ -29,16 +27,16 @@ The following classes and their details:
 Installed the necessary dependencies by:
 
 ``` r
-source("https://bioconductor.org/biocLite.R")
+#source("https://bioconductor.org/biocLite.R")
 #biocLite("wateRmelon")
 #biocLite('limma')
 #biocLite('minfi')
 #biocLite('IlluminaHumanMethylation450kmanifest') 
 #biocLite('IlluminaHumanMethylation450kanno.ilmn12.hg19')
-library(wateRmelon) 
+library(wateRmelon) #working
 library(IlluminaHumanMethylation450kmanifest)
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-library(minfi) 
+library(minfi) #working
 library(dplyr)
 library(tibble)
 ```
@@ -263,7 +261,7 @@ GRset_funnorm2
 MSet2 <- pfilter(Eth_rgset2, pnthresh = 0.01) #removes all bad detection p value probes and bead count <3.
 ```
 
-> We used the pfilter() function from wateRmelon package to remove bad detection p value probes and probes with bead count &lt; 3. We started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes.
+> We used the pfilter() function from watermelon package to remove bad detection p value probes and probes with bead count &lt; 3. We started with 'r nrow(MSet)' to 'r nrow(MSet2)' number of probes.
 
 > Now to remove these probes from our genomic ranges object (normalized object)
 
@@ -287,6 +285,7 @@ head(gsetFin2) #yay
 ========================
 
 ``` r
+setwd("../Raw Data/")
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
 colnames(gsetFin2) <- c(as.character(design$Samplename))
@@ -294,37 +293,40 @@ colnames(gsetFin2) <- c(as.character(design$Samplename))
 full <- cbind(design, t(gsetFin2))
 
 
-#random cpg site, choose number between 1 and 464928
+#random cpg site from 1 to 464928
 probe_row <- 2000
 
 #get the site name 
 probe_name <- colnames(full)[probe_row]
 
-#scatter plot of a random CpG site for all samples, colored by ethnicity
+#plot y = beta values for random cpg site for all samples, x= gestational age, plots divided by sample group, points colored by ethnicity
 ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) + 
+  #geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
   geom_jitter(width = 0.5) + 
   facet_wrap(~Sample_Group) + 
   xlab("Gestational Age") + 
   ylab("Beta values") +
-  ggtitle(paste("Beta values for CpG site", probe_name)) 
+  ggtitle(paste("Beta values for CpG site", probe_name)) #+
+```
 
+    ## Don't know how to automatically pick scale for object of type data.frame. Defaulting to continuous.
 
-#box plot of a random CpG site for all samples, colored by ethnicity. Red dot is mean.
-ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
-  geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
-  geom_jitter(width = 0.3) + 
-  xlab("Ethnicity") + 
-  ylab("Beta values") +
-  ggtitle(paste("Beta values for CpG site", probe_name)) +
-  stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
+![](Exploratory2_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
-#box plot of a random CpG site
+``` r
+  #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
+
+#beta values for random cpG site, box plots of ethnicity
 ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
   geom_boxplot(aes(fill=Ethnicity), show.legend = FALSE) + 
   geom_jitter(width = 0.3) + 
-  facet_wrap(~sex) +
+  facet_wrap(~sex) + 
   xlab("Ethnicity") + 
   ylab("Beta values") +
   ggtitle(paste("Beta values for CpG site", probe_name)) +
   stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 ```
+
+    ## Don't know how to automatically pick scale for object of type data.frame. Defaulting to continuous.
+
+![](Exploratory2_files/figure-markdown_github/unnamed-chunk-16-2.png)
