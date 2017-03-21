@@ -15,18 +15,21 @@ Please see processing script.
 Installed the necessary dependencies by:
 
 ``` r
-#source("https://bioconductor.org/biocLite.R")
+source("https://bioconductor.org/biocLite.R")
 #biocLite("wateRmelon")
 #biocLite('limma')
 #biocLite('minfi')
 #biocLite('IlluminaHumanMethylation450kmanifest') 
 #biocLite('IlluminaHumanMethylation450kanno.ilmn12.hg19')
+#install.packages("gplots")
 library(wateRmelon) 
 library(IlluminaHumanMethylation450kmanifest)
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 library(minfi) 
 library(dplyr)
 library(tibble)
+library(gplots)
+library(RColorBrewer)
 ```
 
 ### 1.2 Load data
@@ -35,7 +38,7 @@ We start with reading the .IDAT files and we read in a sample sheet, and then us
 
 ``` r
 #input the right base directory
-getwd() #input the right base directory
+getwd() 
 setwd("../Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
@@ -184,7 +187,7 @@ gsetFin2 <- column_to_rownames(gsetFin2, 'cpg') #add cpg row names back (I found
 head(gsetFin2) #yay
 
 #save as RDS and then compressing does not reduce gsetFin2 size
-#save(gsetFin2, file = "Processed.txt")
+#saveRDS(design, file = "PreProcessed.rds")
 #write.table(gsetFin2,"Processed.txt",sep="\t",row.names=TRUE)
 #zip("Processed.zip", file = "Processed.txt")
 #gzip(filename= "Processed.txt", destname = "Processed.gz")
@@ -193,15 +196,25 @@ head(gsetFin2) #yay
 4.0 Exploratory Analysis
 ========================
 
+A first look at the processed data with some plots.
+
+First we need to convolve the design matrix with the processed data.
+
 ``` r
 setwd("../Raw Data/")
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
+#rename processed data columns to sample names
 colnames(gsetFin2) <- c(as.character(design$Samplename))
 
+#join the processed data with experiemtnal design info
+#note, couldn't do this on my local computer - data too large. Ran code on lab's rstudio which runs on a server
 full <- cbind(design, t(gsetFin2))
+```
 
+### 4.1 Explore a random CpG Site
 
+``` r
 #random cpg site from 1 to 464923
 probe_row <- 2000
 
@@ -220,7 +233,7 @@ ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) +
 
     ## Don't know how to automatically pick scale for object of type data.frame. Defaulting to continuous.
 
-![](Exploratory2_files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](Exploratory2_files/figure-markdown_github/Random%20CpG%20Site%20Plots-1.png)
 
 ``` r
   #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
@@ -238,4 +251,60 @@ ggplot(full, aes(x = Ethnicity, y = full[probe_row])) +
 
     ## Don't know how to automatically pick scale for object of type data.frame. Defaulting to continuous.
 
-![](Exploratory2_files/figure-markdown_github/unnamed-chunk-10-2.png)
+![](Exploratory2_files/figure-markdown_github/Random%20CpG%20Site%20Plots-2.png)
+
+### 4.2 Sample to Sample Correlations
+
+``` r
+#obtain sample names in order of ethnicity and then sample group
+full_ethnicity <- full[order(full$Ethnicity, full$Sample_Group),]
+order_ethnicity <- row.names(full_ethnicity)
+
+#order expression data by ethnicity and then sample group
+gsetFin2_ethnicity <- gsetFin2[, order_ethnicity]
+
+#set the color pallette for heatmap
+cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
+
+heatmap.2(cor(gsetFin2_ethnicity), 
+          Rowv=NA, 
+          Colv=NA, 
+          dendrogram = "none",
+          trace="none",
+          col=cols, 
+          margins = c(8,8),
+          #labRow = c(full_time$labels),
+          #labCol = c(full_time$labels),
+          key.title = NA)
+title("Sample Correlations, 
+      Ordered by Ethnicity then sample group")
+```
+
+![](Exploratory2_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+``` r
+#obtain sample names in order of ethnicity and then gender
+full_ethnicity_sex <- full[order(full$Ethnicity, full$sex),]
+order_ethnicity_sex <- row.names(full_ethnicity_sex)
+
+#order expression data by ethnicity and then gender
+gsetFin2_ethnicity_sex <- gsetFin2[, order_ethnicity_sex]
+
+#set the color pallette for heatmap
+cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
+
+heatmap.2(cor(gsetFin2_ethnicity_sex), 
+          Rowv=NA, 
+          Colv=NA, 
+          dendrogram = "none",
+          trace="none",
+          col=cols, 
+          margins = c(8,8),
+          #labRow = c(full_time$labels),
+          #labCol = c(full_time$labels),
+          key.title = NA)
+title("Sample Correlations, 
+      Ordered by Ethnicity then Sex")
+```
+
+![](Exploratory2_files/figure-markdown_github/unnamed-chunk-11-1.png)
