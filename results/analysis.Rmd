@@ -1,0 +1,81 @@
+---
+title: "Analysis"
+author: "Ming Wan"
+output: html_document
+---
+
+# Step 0: Load Packages and Data
+Load required packages:
+
+
+```{r}
+library(ggplot2)
+library(limma)
+library(caret)
+library(dplyr)
+library(glmnet)
+```
+
+Read in pre-processed data:
+
+```{r}
+# pre-processed training set
+train.data <- read.table(unz("../data/processed_data/data.zip", "data.txt"), header = T, row.names=1)
+
+str(train.data)
+## row names are CpG sites, column names are codings of sample
+
+# design matrix
+design <- read.csv("../data/processed_data/des.txt", sep="\t", header=TRUE)
+
+str(design)
+## sample names column is different from methyl data columns, need to correct 
+```
+
+# Step 1: Unsupervised clustering:
+
+As Rob suggested, PCA should be the precursor to supervised classification, more like an exploration.
+
+## PCA on training data:
+
+```{r pca}
+pc.train <- prcomp(train.data, center = T, scale = T)
+
+# look at the eigenvalues
+plot(pc.train)
+pc.train$sdev
+## apparently the first PC can explain most of the variances in our data
+diag((pc.train$sdev)^2)
+sum(diag((pc.train$sdev)^2))
+diag((pc.train$sdev)^2)[1,1]/sum(diag((pc.train$sdev)^2))
+
+
+# first 2 PCs
+ggplot(as.data.frame(pc.train$rotation[,c("PC1","PC2")]), aes(x = PC1, y = PC2)) + 
+  geom_point() + geom_text(label = rownames(pc.train$rotation), hjust = 1, vjust = -0.5)
+## to do: we need to color the sample points by ethnicity, after sample names are coerced
+
+# scatter plot matrix for the first 5 PCs
+splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
+
+```
+
+## PCA projection of loadings to test data:
+
+```{r}
+# read pre-processed test data
+
+# project PC loadings to test data
+
+```
+
+
+# Step 2: Supervised classification:
+
+
+## logsitic regression with elastic net regularization
+
+```{r logit}
+
+```
+
