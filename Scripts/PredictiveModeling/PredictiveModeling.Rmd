@@ -10,7 +10,7 @@ output:
 Load required packages:
 
 
-```{r}
+```{r load packages}
 #source("https://bioconductor.org/biocLite.R")
 #biocLite('e1071')                                    # required for glmnet in caret
 library(ggplot2)
@@ -23,7 +23,7 @@ library(glmnet)
 Read in pre-processed data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
-```{r}
+```{r load data}
 setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
@@ -120,7 +120,17 @@ What does this plot show?
 ```{r Specify resampling method}
 fitControl <- trainControl(method = "repeatedcv", 
 													 number = 5,                 # Number of folds
-													 repeats = 5)                 # Repeat 5 times
+													 repeats = 5,                # Repeat 5 times
+													 ## Estimate class probabilities
+													  classProbs = TRUE,
+                           ## Evaluate performance using 
+                           ## the following function
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE      # Saves ROC results
+													 )  
+
+enetGrid <- expand.grid(alpha = c(0.9, 1.0),
+                        lambda = seq(0.001, 0.1, by = 0.01))
 ```
 
 ##### Compare the different methods of cross validation. Why pick repeatedcv
@@ -130,10 +140,12 @@ set.seed(2017)                                         # training models require
 
 # system.time measures the time it takes to run a function
 system.time(netFit <- train(x = t(train.data),         # samples need to be in rows, features need to be columns
-								y = design$Ethnicity, #Predicts probability of being Asian, because this is 1st level
+								y = design$Ethnicity,                  #Predicts probability of being Asian, because this is 1st level
 								method = "glmnet",                     # glmnet model
 								trControl = fitControl,                # use fitControl to specify repeated cross validation
-								preProcess = c( "center", "scale"))    # Center and Scale the data
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								tuneGrid = enetGrid,
+								metric = 'ROC')
 )
 
 netFit
