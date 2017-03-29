@@ -39,7 +39,7 @@ colnames(train.data) == design$Samplename               # check that the samples
 ```
 
 # Step 1: Unsupervised clustering:
-
+---------------this section is exploratory analysis, we should move this to Nivi's exploratory file----------
 As Rob suggested, PCA should be the precursor to supervised classification, more like an exploration.
 
 ## PCA on training data:
@@ -48,26 +48,58 @@ As Rob suggested, PCA should be the precursor to supervised classification, more
 pc.train <- prcomp(t(scale(t(train.data), center = T, scale = T)), center = F, scale = F)
 
 # look at the eigenvalues
-plot(pc.train)
+plot(pc.train) # can we add some labels here (PC1, PC2, PC3,...)
+```
+Say something about the plot 
+
+```{r not sure what this chunk of code tells us, eval = FALSE, include = FALSE}
 pc.train$sdev
-## apparently the first PC can explain most of the variances in our data
 diag((pc.train$sdev)^2)
 sum(diag((pc.train$sdev)^2))
 diag((pc.train$sdev)^2)[1,1]/sum(diag((pc.train$sdev)^2))
+```
 
+```{r Plot PC1 PC2 PC3}
 # first 2 PCS
-PC12 <- data.frame(pc.train$rotation[,c("PC1","PC2")])              # Take out first 2 PCs
-PC12 <- PC12 %>% tibble::rownames_to_column('Samplename') %>%       # Put sample names into column to match on
-                    left_join(design, 'Samplename')                 # Join the metadata info 
-head(PC12)
+PC123 <- data.frame(pc.train$rotation[,c("PC1","PC2", "PC3")])              # Take out first 3 PCs
+PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
+                    left_join(design, 'Samplename')                         # Join the metadata info 
+head(PC123)            
 
-ggplot(PC12, aes(x = PC1, y = PC2)) + 
-  geom_point(aes(color = Ethnicity))
-## to do: add title
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC1 and PC2: Ethnicity')
 
+ggplot(PC123, aes(x = PC1, y = PC3)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC1 and PC3: Ethnicity')
+
+ggplot(PC123, aes(x = PC2, y = PC3)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC2 and PC3: Ethnicity')
+```
+We can see from plotting the first three principal components that our groups (Asian, Caucasian) do not seem to separate. This indicates that the main drivers of the variance in the data is something else.
+
+```{r Plot other metadata}
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = sex)) +
+  ggtitle('Sex')
+
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = ga)) +
+  ggtitle('Gestational Age')
+
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Sample_Group)) +
+  ggtitle('Sample Group')
+```
+It's not clear that our other variables are driving the variance in the data (sex, gestational age, and sample group).
+
+```{r Scatter plot matrix first 5 PCs}
 # scatter plot matrix for the first 5 PCs
 splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
 ```
+What does this plot show?
 
 ## PCA projection of loadings to test data:
 
@@ -103,7 +135,7 @@ system.time(netFit <- train(x = t(train.data),         # samples need to be in r
 								trControl = fitControl,                # use fitControl to specify repeated cross validation
 								preProcess = c( "center", "scale"))    # Center and Scale the data
 )
-Sys.time()
+
 netFit
 ```
  
