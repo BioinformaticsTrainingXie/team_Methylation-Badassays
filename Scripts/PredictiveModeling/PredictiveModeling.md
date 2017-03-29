@@ -269,9 +269,40 @@ system.time(netFit <- train(x = t(train.data),         # samples need to be in r
                                 trControl = fitControl,                # use fitControl to specify repeated cross validation
                                 preProcess = c( "center", "scale"))    # Center and Scale the data
 )
-Sys.time()
+```
+
+    ##    user  system elapsed 
+    ##  545.69   26.51  574.01
+
+``` r
 netFit
 ```
+
+    ## glmnet 
+    ## 
+    ##     45 samples
+    ## 464923 predictors
+    ##      2 classes: 'Asian', 'Caucasian' 
+    ## 
+    ## Pre-processing: centered (464923), scaled (464923) 
+    ## Resampling: Cross-Validated (5 fold, repeated 1 times) 
+    ## Summary of sample sizes: 37, 36, 35, 36, 36 
+    ## Resampling results across tuning parameters:
+    ## 
+    ##   alpha  lambda      Accuracy   Kappa    
+    ##   0.10   0.02429921  0.9555556  0.8800000
+    ##   0.10   0.07684085  0.9555556  0.8800000
+    ##   0.10   0.24299210  0.9555556  0.8800000
+    ##   0.55   0.02429921  0.9777778  0.9454545
+    ##   0.55   0.07684085  0.9555556  0.8434783
+    ##   0.55   0.24299210  0.9333333  0.7889328
+    ##   1.00   0.02429921  0.9555556  0.8434783
+    ##   1.00   0.07684085  0.9555556  0.8434783
+    ##   1.00   0.24299210  0.8266667  0.4040921
+    ## 
+    ## Accuracy was used to select the optimal model using  the largest value.
+    ## The final values used for the model were alpha = 0.55 and lambda
+    ##  = 0.02429921.
 
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
 

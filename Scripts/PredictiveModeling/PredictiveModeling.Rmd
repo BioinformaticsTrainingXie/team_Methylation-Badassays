@@ -125,7 +125,7 @@ fitControl <- trainControl(method = "repeatedcv",
 
 ##### Compare the different methods of cross validation. Why pick repeatedcv
 
-```{r tune glmnet, eval = FALSE}
+```{r tune glmnet}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
 
 # system.time measures the time it takes to run a function
