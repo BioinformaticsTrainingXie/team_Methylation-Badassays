@@ -14,6 +14,13 @@ For the details of the project ideas, dataset and methods we use in this porject
 
 2. [Progress report](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/progress_report.md): Progress report contains the progress about our project.
 
+3. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts): scripts folder contains the script for:
+    * [preprosessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing):contains scripts process raw data to processed data.
+    
+    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis):
+    
+    * [predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling):
+
 3. [Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/data)
 
   + [Code to import data](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/processed_data/PreprocessQC.Rmd)
