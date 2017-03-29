@@ -120,7 +120,7 @@ What does this plot show?
 ```{r Specify resampling method}
 fitControl <- trainControl(method = "repeatedcv", 
 													 number = 5,                 # Number of folds
-													 repeats = )                 # Repeat 5 times
+													 repeats = 5)                 # Repeat 5 times
 ```
 
 ##### Compare the different methods of cross validation. Why pick repeatedcv
@@ -138,12 +138,33 @@ system.time(netFit <- train(x = t(train.data),         # samples need to be in r
 
 netFit
 ```
- 
+
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
 
 Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome Biology, 14(10), R115. http://doi.org/10.1186/gb-2013-14-10-r115
+ 
+```{r examine results}
+trellis.par.set(caretTheme())
+ggplot(netFit)
 
-```{r logit}
+histogram(netFit, metric = netFit$metric)
 
+#heatmap of results
+plot(netFit, metric = "Kappa", plotType = "level",
+     scales = list(x = list(rot = 90)))
+plot(netFit, metric = "Accuracy", plotType = "level",
+     scales = list(x = list(rot = 90)))
 ```
+
+```{r extract features}
+predictors <- predictors(netFit)
+predictors
+length(predictors) # 85 CpGs extracted
+```
+Looks like our model has chosen 85 CpGs that can be used to predict ethnicity.
+```{r plot top 35}
+glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
+plot(glmImp, top = 35)
+```
+
 

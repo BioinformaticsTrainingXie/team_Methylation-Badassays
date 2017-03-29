@@ -272,7 +272,7 @@ system.time(netFit <- train(x = t(train.data),         # samples need to be in r
 ```
 
     ##    user  system elapsed 
-    ##  545.69   26.51  574.01
+    ##  582.92   27.41  617.58
 
 ``` r
 netFit
@@ -307,3 +307,71 @@ netFit
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
 
 Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome Biology, 14(10), R115. <http://doi.org/10.1186/gb-2013-14-10-r115>
+
+``` r
+trellis.par.set(caretTheme())
+ggplot(netFit)
+```
+
+    ## Warning: Ignoring unknown aesthetics: shape
+
+![](PredictiveModeling_files/figure-markdown_github/examine%20results-1.png)
+
+``` r
+histogram(netFit, metric = netFit$metric)
+```
+
+![](PredictiveModeling_files/figure-markdown_github/examine%20results-2.png)
+
+``` r
+#heatmap of results
+plot(netFit, metric = "Kappa", plotType = "level",
+     scales = list(x = list(rot = 90)))
+```
+
+![](PredictiveModeling_files/figure-markdown_github/examine%20results-3.png)
+
+``` r
+plot(netFit, metric = "Accuracy", plotType = "level",
+     scales = list(x = list(rot = 90)))
+```
+
+![](PredictiveModeling_files/figure-markdown_github/examine%20results-4.png)
+
+``` r
+predictors <- predictors(netFit)
+predictors
+```
+
+    ##  [1] "cg06903451" "cg09843049" "cg03538326" "cg07835437" "cg03041030"
+    ##  [6] "cg12983196" "cg09151801" "cg24673385" "cg12274479" "cg09874415"
+    ## [11] "cg06615678" "cg27055365" "cg15486123" "cg12436631" "cg22853943"
+    ## [16] "cg18092079" "cg12832956" "cg10265016" "cg02541444" "cg03639864"
+    ## [21] "cg06851844" "cg07547054" "cg13921903" "cg00574513" "cg06197870"
+    ## [26] "cg06706813" "cg08704934" "cg00031303" "cg22599148" "cg17565478"
+    ## [31] "cg03680338" "cg09555323" "cg14436871" "cg05901451" "cg11182199"
+    ## [36] "cg01770232" "cg26295559" "cg19041462" "cg08508337" "cg00812861"
+    ## [41] "cg14244251" "cg19878200" "cg23190089" "cg18436709" "cg26577529"
+    ## [46] "cg14581129" "cg05393297" "cg25025879" "cg16329197" "cg27179474"
+    ## [51] "cg10890403" "cg24037715" "cg20273387" "cg12011926" "cg15288010"
+    ## [56] "cg24280607" "cg22715398" "cg09734162" "cg00086809" "cg16808927"
+    ## [61] "cg08100221" "cg27144592" "cg05795554" "cg04287289" "cg26513180"
+    ## [66] "cg16445596" "cg05444541" "cg24209115" "cg10896456" "cg13607699"
+    ## [71] "cg12602405" "cg02159489" "cg03238119" "cg06595479" "cg14937409"
+    ## [76] "cg24800175" "cg17004101" "cg19463256" "cg17375267" "cg11773468"
+    ## [81] "cg07035552" "cg06152856" "cg09033563" "cg10546252" "cg17028443"
+
+``` r
+length(predictors) # 85 CpGs extracted
+```
+
+    ## [1] 85
+
+Looks like our model has chosen 85 CpGs that can be used to predict ethnicity.
+
+``` r
+glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
+plot(glmImp, top = 35)
+```
+
+![](PredictiveModeling_files/figure-markdown_github/plot%20top%2035-1.png)
