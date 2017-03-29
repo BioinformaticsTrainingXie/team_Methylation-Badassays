@@ -11,8 +11,8 @@ Load required packages:
 
 
 ```{r}
-source("https://bioconductor.org/biocLite.R")
-biocLite('e1071')
+#source("https://bioconductor.org/biocLite.R")
+#biocLite('e1071')                                    # required for glmnet in caret
 library(ggplot2)
 library(limma)
 library(caret)
@@ -24,15 +24,15 @@ Read in pre-processed data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r}
-#setwd('../')                                           # note: all of these relative file path calls work only for knitting
+setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
-train.data <- read.table('../data/processed_data/data.txt')
+train.data <- read.table('../Data/Processed Data/data.txt')
 str(train.data)
 ## row names are CpG sites, column names are sample names
 
 # load metadata
-design <- read.csv("./data/processed_data/des.txt", sep="\t", header=TRUE)
+design <- read.csv("../Data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
 colnames(train.data) == design$Samplename               # check that the samples are in same order
@@ -45,7 +45,7 @@ As Rob suggested, PCA should be the precursor to supervised classification, more
 ## PCA on training data:
 
 ```{r pca}
-pc.train <- prcomp(train.data, center = T, scale = T)
+pc.train <- prcomp(t(scale(t(train.data), center = T, scale = T)), center = F, scale = F)
 
 # look at the eigenvalues
 plot(pc.train)
@@ -93,7 +93,7 @@ fitControl <- trainControl(method = "repeatedcv",
 
 ##### Compare the different methods of cross validation. Why pick repeatedcv
 
-```{r tune glmnet}
+```{r tune glmnet, eval = FALSE}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
 
 # system.time measures the time it takes to run a function
@@ -106,12 +106,10 @@ system.time(netFit <- train(x = t(train.data),         # samples need to be in r
 Sys.time()
 netFit
 ```
-#### Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
+ 
+Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
 
-#### Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome Biology, 14(10), R115. http://doi.org/10.1186/gb-2013-14-10-r115
-
-```{r}
-```
+Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome Biology, 14(10), R115. http://doi.org/10.1186/gb-2013-14-10-r115
 
 ```{r logit}
 
