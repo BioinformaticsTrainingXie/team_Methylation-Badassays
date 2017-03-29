@@ -6,7 +6,7 @@ DNA methylation (DNAm) is linked to many diseases like cancer and autism. Howeve
 
 We will first find methylation profiles in a set of subjects with known genetic ancestry (Asians or Caucasians). These profiles will then serve as a basis to cluster methylation data in which genetic ancestry is not known.
 
-For the details of the project ideas, dataset and methods we use in this porject, please check the [project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md)
+For the details of the project ideas, dataset and methods we use in this porject, please check the [project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md). 
 
 ### Table of contents:
 
