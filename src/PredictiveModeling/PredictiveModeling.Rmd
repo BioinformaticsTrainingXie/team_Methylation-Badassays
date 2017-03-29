@@ -1,7 +1,9 @@
 ---
-title: "Analysis"
-author: "Ming Wan"
-output: html_document
+title: "Predictive Modeling Analysis"
+author: "Ming Wan, Victor Yuan"
+output: 
+  github_document:
+    toc: TRUE
 ---
 
 # Step 0: Load Packages and Data
@@ -17,10 +19,12 @@ library(glmnet)
 ```
 
 Read in pre-processed data:
+*Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r}
+setwd('../')                                           # note: all of these relative file path calls work only for knitting
 # pre-processed training set
-train.data <- read.table(unz("../data/processed_data/data.zip", "data.txt"), header = T, row.names=1)
+train.data <- read.table('../data/processed_data/data.txt')
 
 str(train.data)
 ## row names are CpG sites, column names are codings of sample
@@ -49,15 +53,18 @@ diag((pc.train$sdev)^2)
 sum(diag((pc.train$sdev)^2))
 diag((pc.train$sdev)^2)[1,1]/sum(diag((pc.train$sdev)^2))
 
+# first 2 PCS
+PC12 <- data.frame(pc.train$rotation[,c("PC1","PC2")])              # Take out first 2 PCs
+PC12 <- PC12 %>% tibble::rownames_to_column('Samplename') %>%       # Put sample names into column to match on
+                    left_join(design, 'Samplename')                 # Join the metadata info 
+head(PC12)
 
-# first 2 PCs
-ggplot(as.data.frame(pc.train$rotation[,c("PC1","PC2")]), aes(x = PC1, y = PC2)) + 
-  geom_point() + geom_text(label = rownames(pc.train$rotation), hjust = 1, vjust = -0.5)
-## to do: we need to color the sample points by ethnicity, after sample names are coerced
+ggplot(PC12, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Ethnicity))
+## to do: add title
 
 # scatter plot matrix for the first 5 PCs
 splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
-
 ```
 
 ## PCA projection of loadings to test data:
@@ -73,7 +80,7 @@ splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
 # Step 2: Supervised classification:
 
 
-## logsitic regression with elastic net regularization
+## logistic regression with elastic net regularization
 
 ```{r logit}
 
