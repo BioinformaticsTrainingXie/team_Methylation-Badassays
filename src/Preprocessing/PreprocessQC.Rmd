@@ -61,7 +61,7 @@ We start with reading the .IDAT files and we read in a sample sheet, and then us
 ```{r, read data}
 #input the right base directory
 getwd() #input the right base directory
-setwd("../Raw Data/")
+setwd("./data/Raw Data/")
 basedir <- getwd()
 samplesheet <- read.metharray.sheet(basedir, recursive = TRUE) # read in sample sheet .csv file
 Eth_rgset <- read.metharray.exp(targets = samplesheet) # read in iDAT files using sample sheet
@@ -231,6 +231,18 @@ dim(gsetFin2)
 #464923 CpGs left
 gsetFin2 <- column_to_rownames(gsetFin2, 'cpg') #add cpg row names back (I found this reduces the file size significantly - this is kind of weird)
 head(gsetFin2) #yay
+```
+
+```{r replace column names with sample names}
+pheno2 <- data.frame(pData(GRset_funnorm2)) %>% rownames_to_column('Sample_ID') %>% select(Sample_ID, Sample_Name)
+head(pheno2)
+col <- data.frame(colnames(gsetFin2)) 
+colnames(col) <- 'Sample_ID'
+col
+col2 <- col %>% left_join(pheno2, by = 'Sample_ID')
+col2
+colnames(gsetFin2) == col2$Sample_ID
+colnames(gsetFin2) <- col2$Sample_Name
 ```
 # 4.0 Export processed data files (data.txt, and des.txt)
 ```{r eval = FALSE}
