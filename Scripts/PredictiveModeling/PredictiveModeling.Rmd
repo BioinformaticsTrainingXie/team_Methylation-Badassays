@@ -1,0 +1,119 @@
+---
+title: "Predictive Modeling Analysis"
+author: "Ming Wan, Victor Yuan"
+output: 
+  github_document:
+    toc: TRUE
+---
+
+# Step 0: Load Packages and Data
+Load required packages:
+
+
+```{r}
+source("https://bioconductor.org/biocLite.R")
+biocLite('e1071')
+library(ggplot2)
+library(limma)
+library(caret)
+library(dplyr)
+library(glmnet)
+```
+
+Read in pre-processed data:
+*Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
+
+```{r}
+#setwd('../')                                           # note: all of these relative file path calls work only for knitting
+
+# load data (pre-processed training set)
+train.data <- read.table('../data/processed_data/data.txt')
+str(train.data)
+## row names are CpG sites, column names are sample names
+
+# load metadata
+design <- read.csv("./data/processed_data/des.txt", sep="\t", header=TRUE)
+str(design)
+
+colnames(train.data) == design$Samplename               # check that the samples are in same order
+```
+
+# Step 1: Unsupervised clustering:
+
+As Rob suggested, PCA should be the precursor to supervised classification, more like an exploration.
+
+## PCA on training data:
+
+```{r pca}
+pc.train <- prcomp(train.data, center = T, scale = T)
+
+# look at the eigenvalues
+plot(pc.train)
+pc.train$sdev
+## apparently the first PC can explain most of the variances in our data
+diag((pc.train$sdev)^2)
+sum(diag((pc.train$sdev)^2))
+diag((pc.train$sdev)^2)[1,1]/sum(diag((pc.train$sdev)^2))
+
+# first 2 PCS
+PC12 <- data.frame(pc.train$rotation[,c("PC1","PC2")])              # Take out first 2 PCs
+PC12 <- PC12 %>% tibble::rownames_to_column('Samplename') %>%       # Put sample names into column to match on
+                    left_join(design, 'Samplename')                 # Join the metadata info 
+head(PC12)
+
+ggplot(PC12, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Ethnicity))
+## to do: add title
+
+# scatter plot matrix for the first 5 PCs
+splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
+```
+
+## PCA projection of loadings to test data:
+
+```{r}
+# read pre-processed test data
+
+# project PC loadings to test data
+
+```
+
+--------End of exploratory Analysis-----------
+
+# Step 2: Supervised classification:
+
+
+## logistic regression with elastic net regularization
+
+```{r Specify resampling method}
+fitControl <- trainControl(method = "repeatedcv", 
+													 number = 5,                 # Number of folds
+													 repeats = )                 # Repeat 5 times
+```
+
+##### Compare the different methods of cross validation. Why pick repeatedcv
+
+```{r tune glmnet}
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
+
+# system.time measures the time it takes to run a function
+system.time(netFit <- train(x = t(train.data),         # samples need to be in rows, features need to be columns
+								y = design$Ethnicity, #Predicts probability of being Asian, because this is 1st level
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify repeated cross validation
+								preProcess = c( "center", "scale"))    # Center and Scale the data
+)
+Sys.time()
+netFit
+```
+#### Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
+
+#### Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome Biology, 14(10), R115. http://doi.org/10.1186/gb-2013-14-10-r115
+
+```{r}
+```
+
+```{r logit}
+
+```
+
