@@ -8,7 +8,6 @@ Ming Wan, Victor Yuan
     -   [PCA projection of loadings to test data:](#pca-projection-of-loadings-to-test-data)
 -   [Step 2: Supervised classification:](#step-2-supervised-classification)
     -   [logistic regression with elastic net regularization](#logistic-regression-with-elastic-net-regularization)
-        -   [Compare the different methods of cross validation. Why pick repeatedcv](#compare-the-different-methods-of-cross-validation.-why-pick-repeatedcv)
 
 Step 0: Load Packages and Data
 ==============================
@@ -18,6 +17,20 @@ Load required packages:
 ``` r
 #source("https://bioconductor.org/biocLite.R")
 #biocLite('e1071')                                    # required for glmnet in caret
+#biocLite('pROC')
+library(pROC)
+```
+
+    ## Type 'citation("pROC")' for a citation.
+
+    ## 
+    ## Attaching package: 'pROC'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     cov, smooth, var
+
+``` r
 library(ggplot2)
 library(limma)
 library(caret)
@@ -41,14 +54,8 @@ library(dplyr)
     ##     intersect, setdiff, setequal, union
 
 ``` r
-library(glmnet)
+#library(glmnet)
 ```
-
-    ## Loading required package: Matrix
-
-    ## Loading required package: foreach
-
-    ## Loaded glmnet 2.0-5
 
 Read in pre-processed data: \*Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed\_data/ directory.
 
@@ -252,27 +259,57 @@ logistic regression with elastic net regularization
 ---------------------------------------------------
 
 ``` r
-fitControl <- trainControl(method = "repeatedcv", 
-                                                     number = 5,                 # Number of folds
-                                                     repeats = )                 # Repeat 5 times
+#renamed just so that I can copy Amit's code
+
+x.train <- train.data 
+y.train <- design$Ethnicity 
 ```
 
-##### Compare the different methods of cross validation. Why pick repeatedcv
+``` r
+k = 5
+M = 3
+
+fitControl <- trainControl(method = "repeatedcv", 
+                                                     number = k,                 # Number of folds
+                                                     repeats = M,
+                                                     ## Estimate class probabilities
+                                                      classProbs = TRUE,
+                           ## Evaluate performance using 
+                           ## the following function
+                           summaryFunction = twoClassSummary,
+                                                     savePredictions = TRUE      # Saves ROC results
+                                                     )  
+```
 
 ``` r
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
 
-# system.time measures the time it takes to run a function
-system.time(netFit <- train(x = t(train.data),         # samples need to be in rows, features need to be columns
-                                y = design$Ethnicity, #Predicts probability of being Asian, because this is 1st level
+system.time(netFit <- train(x = t(x.train),   # samples need to be in rows, features need to be columns
+                                y = y.train,                  
                                 method = "glmnet",                     # glmnet model
-                                trControl = fitControl,                # use fitControl to specify repeated cross validation
-                                preProcess = c( "center", "scale"))    # Center and Scale the data
+                                trControl = fitControl,                # use fitControl to specify cross validation
+                                preProcess = c( "center", "scale"),    # Center and Scale the data
+                                metric = 'ROC')                        # ROC because distribution is slightly skewed
 )
 ```
 
+    ## Loading required package: glmnet
+
+    ## Loading required package: Matrix
+
+    ## Loading required package: foreach
+
+    ## Loaded glmnet 2.0-5
+
+    ## 
+    ## Attaching package: 'glmnet'
+
+    ## The following object is masked from 'package:pROC':
+    ## 
+    ##     auc
+
     ##    user  system elapsed 
-    ##  582.92   27.41  617.58
+    ## 1628.49   83.61 1744.03
 
 ``` r
 netFit
@@ -285,24 +322,26 @@ netFit
     ##      2 classes: 'Asian', 'Caucasian' 
     ## 
     ## Pre-processing: centered (464923), scaled (464923) 
-    ## Resampling: Cross-Validated (5 fold, repeated 1 times) 
-    ## Summary of sample sizes: 37, 36, 35, 36, 36 
+    ## Resampling: Cross-Validated (5 fold, repeated 3 times) 
+    ## Summary of sample sizes: 37, 36, 35, 36, 36, 36, ... 
     ## Resampling results across tuning parameters:
     ## 
-    ##   alpha  lambda      Accuracy   Kappa    
-    ##   0.10   0.02429921  0.9555556  0.8800000
-    ##   0.10   0.07684085  0.9555556  0.8800000
-    ##   0.10   0.24299210  0.9555556  0.8800000
-    ##   0.55   0.02429921  0.9777778  0.9454545
-    ##   0.55   0.07684085  0.9555556  0.8434783
-    ##   0.55   0.24299210  0.9333333  0.7889328
-    ##   1.00   0.02429921  0.9555556  0.8434783
-    ##   1.00   0.07684085  0.9555556  0.8434783
-    ##   1.00   0.24299210  0.8266667  0.4040921
+    ##   alpha  lambda      ROC        Sens       Spec     
+    ##   0.10   0.02429921  0.9968254  0.8555556  1.0000000
+    ##   0.10   0.07684085  0.9968254  0.8555556  1.0000000
+    ##   0.10   0.24299210  0.9968254  0.8111111  1.0000000
+    ##   0.55   0.02429921  1.0000000  0.9111111  1.0000000
+    ##   0.55   0.07684085  1.0000000  0.8666667  1.0000000
+    ##   0.55   0.24299210  1.0000000  0.7444444  1.0000000
+    ##   1.00   0.02429921  0.9746032  0.8666667  0.9904762
+    ##   1.00   0.07684085  0.9793651  0.8444444  0.9904762
+    ##   1.00   0.24299210  0.9624339  0.3888889  1.0000000
     ## 
-    ## Accuracy was used to select the optimal model using  the largest value.
+    ## ROC was used to select the optimal model using  the largest value.
     ## The final values used for the model were alpha = 0.55 and lambda
-    ##  = 0.02429921.
+    ##  = 0.2429921.
+
+Cross validation with a fold of k = 5 (making each fold 9 samples large), was used to determine the optimal tuning parameters.
 
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
 
@@ -318,56 +357,32 @@ ggplot(netFit)
 ![](PredictiveModeling_files/figure-markdown_github/examine%20results-1.png)
 
 ``` r
-histogram(netFit, metric = netFit$metric)
+#heatmap of results
+plot(netFit, metric = "ROC", plotType = "level",
+     scales = list(x = list(rot = 90)))
 ```
 
 ![](PredictiveModeling_files/figure-markdown_github/examine%20results-2.png)
-
-``` r
-#heatmap of results
-plot(netFit, metric = "Kappa", plotType = "level",
-     scales = list(x = list(rot = 90)))
-```
-
-![](PredictiveModeling_files/figure-markdown_github/examine%20results-3.png)
-
-``` r
-plot(netFit, metric = "Accuracy", plotType = "level",
-     scales = list(x = list(rot = 90)))
-```
-
-![](PredictiveModeling_files/figure-markdown_github/examine%20results-4.png)
 
 ``` r
 predictors <- predictors(netFit)
 predictors
 ```
 
-    ##  [1] "cg06903451" "cg09843049" "cg03538326" "cg07835437" "cg03041030"
-    ##  [6] "cg12983196" "cg09151801" "cg24673385" "cg12274479" "cg09874415"
-    ## [11] "cg06615678" "cg27055365" "cg15486123" "cg12436631" "cg22853943"
-    ## [16] "cg18092079" "cg12832956" "cg10265016" "cg02541444" "cg03639864"
-    ## [21] "cg06851844" "cg07547054" "cg13921903" "cg00574513" "cg06197870"
-    ## [26] "cg06706813" "cg08704934" "cg00031303" "cg22599148" "cg17565478"
-    ## [31] "cg03680338" "cg09555323" "cg14436871" "cg05901451" "cg11182199"
-    ## [36] "cg01770232" "cg26295559" "cg19041462" "cg08508337" "cg00812861"
-    ## [41] "cg14244251" "cg19878200" "cg23190089" "cg18436709" "cg26577529"
-    ## [46] "cg14581129" "cg05393297" "cg25025879" "cg16329197" "cg27179474"
-    ## [51] "cg10890403" "cg24037715" "cg20273387" "cg12011926" "cg15288010"
-    ## [56] "cg24280607" "cg22715398" "cg09734162" "cg00086809" "cg16808927"
-    ## [61] "cg08100221" "cg27144592" "cg05795554" "cg04287289" "cg26513180"
-    ## [66] "cg16445596" "cg05444541" "cg24209115" "cg10896456" "cg13607699"
-    ## [71] "cg12602405" "cg02159489" "cg03238119" "cg06595479" "cg14937409"
-    ## [76] "cg24800175" "cg17004101" "cg19463256" "cg17375267" "cg11773468"
-    ## [81] "cg07035552" "cg06152856" "cg09033563" "cg10546252" "cg17028443"
+    ##  [1] "cg06903451" "cg09843049" "cg07835437" "cg12983196" "cg06615678"
+    ##  [6] "cg15486123" "cg10265016" "cg07547054" "cg13921903" "cg00574513"
+    ## [11] "cg08704934" "cg01770232" "cg26295559" "cg00812861" "cg19878200"
+    ## [16] "cg14581129" "cg05393297" "cg25025879" "cg16329197" "cg12011926"
+    ## [21] "cg16808927" "cg08100221" "cg05795554" "cg04287289" "cg26513180"
+    ## [26] "cg12602405" "cg02159489" "cg06595479" "cg07035552"
 
 ``` r
-length(predictors) # 85 CpGs extracted
+length(predictors) 
 ```
 
-    ## [1] 85
+    ## [1] 29
 
-Looks like our model has chosen 85 CpGs that can be used to predict ethnicity.
+Looks like our model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
 ``` r
 glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
@@ -375,3 +390,1010 @@ plot(glmImp, top = 35)
 ```
 
 ![](PredictiveModeling_files/figure-markdown_github/plot%20top%2035-1.png)
+
+``` r
+# this is adapted from Amit's code from lec 19
+#use repeated CV to estimate test performance
+set.seed(2018)
+
+# list of lists containing fold ids
+folds <- lapply(1:M, function(i) createFolds(y.train, k = k))
+
+netTesterror <- lapply(folds, function(i){
+  lapply(i, function(j){
+    # tune parameters with CV
+    set.seed(2019)
+    fitControl <- trainControl(method = "repeatedcv", 
+                                                     number = k,                 
+                                                     repeats = M,
+                                                     classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+                                                     savePredictions = TRUE)
+    
+    
+    # build elastic net classifier
+    netFit <- train(x =  t(x.train)[-j,],   
+                                y = y.train[-j],                  
+                                method = "glmnet",                     
+                                trControl = fitControl,
+                                preProcess = c( 'center', 'scale'),
+                                metric = 'ROC')   
+    
+    # Estimate probabilities of test predictions
+    probTest <- predict(netFit, t(x.train)[j,], type = 'prob')
+    ethProb <- probTest[,'Asian']
+    ethProb
+
+  })
+})
+```
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+    ## Warning in lognet(x, is.sparse, ix, jx, y, weights, offset, alpha, nobs, :
+    ## one multinomial or binomial class has fewer than 8 observations; dangerous
+    ## ground
+
+``` r
+netTesterror
+```
+
+    ## [[1]]
+    ## [[1]]$Fold1
+    ## [1] 0.80118476 0.02555646 0.06140903 0.03609474 0.63628429 0.06697999
+    ## [7] 0.02904903 0.01430149 0.02977636
+    ## 
+    ## [[1]]$Fold2
+    ## [1] 0.01567475 0.09577317 0.10272328 0.02675467 0.22820570 0.06872002
+    ## [7] 0.02847293 0.78315843 0.45184197
+    ## 
+    ## [[1]]$Fold3
+    ## [1] 0.61757208 0.07147420 0.11283338 0.07895275 0.03222931 0.03186154
+    ## [7] 0.21784797 0.04108041 0.74462068
+    ## 
+    ## [[1]]$Fold4
+    ## [1] 0.11329844 0.03583564 0.02853341 0.01188968 0.04921686 0.57152557
+    ## [7] 0.55362247 0.04194895
+    ## 
+    ## [[1]]$Fold5
+    ##  [1] 0.02965134 0.03002370 0.49793858 0.04697648 0.15374738 0.72156837
+    ##  [7] 0.34235511 0.08516250 0.04360862 0.04466175
+    ## 
+    ## 
+    ## [[2]]
+    ## [[2]]$Fold1
+    ##  [1] 0.09926479 0.22277651 0.09937258 0.66416574 0.09863577 0.19545900
+    ##  [7] 0.56935626 0.15586287 0.10741511 0.49424112
+    ## 
+    ## [[2]]$Fold2
+    ## [1] 0.02448076 0.86914086 0.03124585 0.03216389 0.01960078 0.55173553
+    ## [7] 0.07994581 0.11865110 0.15303932
+    ## 
+    ## [[2]]$Fold3
+    ##  [1] 0.03015257 0.02538668 0.48226619 0.04076482 0.02797293 0.02124027
+    ##  [7] 0.70731037 0.70048656 0.02074951 0.03318546
+    ## 
+    ## [[2]]$Fold4
+    ## [1] 0.55275105 0.05372028 0.08534017 0.01485792 0.50606052 0.07385628
+    ## [7] 0.04835082 0.01602613
+    ## 
+    ## [[2]]$Fold5
+    ## [1] 0.04123112 0.04458234 0.14975392 0.34973409 0.07974504 0.03352487
+    ## [7] 0.73904092 0.04817553
+    ## 
+    ## 
+    ## [[3]]
+    ## [[3]]$Fold1
+    ## [1] 0.06029396 0.09745268 0.13621062 0.11473110 0.58727326 0.06781633
+    ## [7] 0.82735669 0.05010994
+    ## 
+    ## [[3]]$Fold2
+    ##  [1] 0.03119275 0.02360133 0.03230596 0.04316843 0.02804458 0.12959037
+    ##  [7] 0.02778506 0.04456812 0.62451216 0.44215394
+    ## 
+    ## [[3]]$Fold3
+    ## [1] 0.01993918 0.48605734 0.03706410 0.01695667 0.38662658 0.06139780
+    ## [7] 0.10972265 0.20097334
+    ## 
+    ## [[3]]$Fold4
+    ## [1] 0.76314865 0.12058900 0.13613982 0.10654128 0.06640907 0.69094074
+    ## [7] 0.11308927 0.15194954 0.30339688
+    ## 
+    ## [[3]]$Fold5
+    ##  [1] 0.67549439 0.03971941 0.16015573 0.02865107 0.63336816 0.71353931
+    ##  [7] 0.07854770 0.04623719 0.04903272 0.04775205
+
+``` r
+# Computer classification performance measures
+# enet
+Performance <- mapply(function(x, y){
+  auc <- pROC::roc(y.train[unlist(x)], unlist(y),
+                   direction ='<',
+                   levels = c('Caucasian', 'Asian'),
+                   percent = TRUE)
+  list(tpr = auc$sensitivities,
+       fpr = 100 - auc$specificities,
+       auc = round(auc$auc, 2))
+}, x = folds, y = netTesterror)
+Performance
+```
+
+    ##     [,1]       [,2]       [,3]      
+    ## tpr Numeric,46 Numeric,46 Numeric,46
+    ## fpr Numeric,46 Numeric,46 Numeric,46
+    ## auc 100        100        98.48
+
+``` r
+# plot ROC curve
+
+plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
+     type = 'l', col = 1, xlab = '100 - sensitivity',
+     ylab = 'Sensitivity', main = 'Enet')
+for(i in length(folds)){
+  points(Performance['tpr',][[i]] ~ Performance['fpr',][[i]],
+         type = 'l', col = 2)
+}
+text(x = 60, y = 40, labels =
+       paste0('mean AUC = ', round(mean(unlist(Performance['auc',])), 1),
+              '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
+```
+
+![](PredictiveModeling_files/figure-markdown_github/ROC%20curve-1.png)
