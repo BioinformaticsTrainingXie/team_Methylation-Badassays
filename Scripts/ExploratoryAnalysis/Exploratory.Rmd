@@ -1,73 +1,244 @@
 ---
-title: "Exploratory"
-author: "Nivretta Thatra"
-date: "March 15, 2017"
+title: "Exploratory Analysis of Processed Data"
+author: "Nivretta"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+#Step 0: Load Packages and Data
 
-Installed the necessary dependencies by: 
+###Installed the necessary dependencies by: 
 
 ```{r, load libraries, message=FALSE}
-#source("https://bioconductor.org/biocLite.R")
-#biocLite("wateRmelon")
-#biocLite('limma')
-#biocLite('minfi')
-library(wateRmelon)
-library(minfi)
+
+#install.packages("gplots")
+#install.packages("devtools")
+#install_github("ggbiplot", "vqv")
+library(devtools)
+library(ggbiplot)
 library(dplyr)
-library(tidyverse)
-library(readr)
+library(tibble)
+library(gplots)
+library(RColorBrewer)
+library(lattice)
+
 ```
 
-##Load data
+###Load in preprocessed data from dropbox.
 
-Tried to load preprocessed data in attempt to work from it directly rather than having to regenerate it from preprocessing script...didn't work.
-```{r, read data}
+```{r}
+#none of the three google drive links work
+#download.file("https://drive.google.com/open?id=0B3XxI9J9w-RYN0R5Rnh6SnZNNmc", "data.txt")
+#download.file("https://drive.google.com/uc?export=download&id=0B3XxI9J9w-RYN0R5Rnh6SnZNNmc", "data.txt")
+#download.file("https://drive.google.com/uc?export=download&confirm=kWmX&id=0B3XxI9J9w-RYN0R5Rnh6SnZNNmc", "data.txt")
 
-setwd("../processed_data/")
+#download preprocessed data from this link directly into exploratory Analysis folder
+#data.txt is in gitignore, be sure not to try to push to github
+#download.file("https://www.dropbox.com/s/s4xv0k0vsl0ka0r/data.txt?dl=1", "data.txt")
 
-#data import is not working correctly, read_delim is the only function that gets close
-#read.delim, read.csv don't work
-#read_delim problem: row names are assigned to as first sample values, final sample not imported
-#data <- read_delim("data.txt"," ", escape_double = FALSE, trim_ws = TRUE)
+data <- read.table("data.txt")
 
 design <- read.csv("des.txt", sep="\t", header=TRUE)
 
-#trying to get metadata and data into one dataframe to do exploratory visualizations, not possible because data is too big
-
-#colnames(data) <- c(as.character(design$Samplename))
-
-#full <- cbind(design, t(data))
-
-
 ```
 
-##Plotting
+#Step 1: Exploratory Plots
 
-Ideally we'd plot methylation at a random CpG sight and see how it varies with covariates. Below is sample code for how we'd that, if data loading was working.
+A first look at the processed data with some plots.
 
-```{r, eval=FALSE}
-#Sample code
+First we need to convolve the design matrix with the processed data.
 
-#random cpg site
+```{r Create Exploratory Analysis Data Frame}
+
+#rename processed data columns to sample names - doesn't need to be done anymore
+#colnames(gsetFin2) <- c(as.character(design$Samplename))
+
+#join the processed data with experiemtnal design info
+#note, couldn't do this on my local computer - data too large. Ran code on lab's rstudio which runs on a server
+full <- cbind(design, t(data))
+```
+
+###1.1 Explore a random CpG Site
+
+
+```{r Random CpG Site Plots}
+#random cpg site from 1 to 464923
 probe_row <- 2000
 
 #get the site name 
 probe_name <- colnames(full)[probe_row]
 
-ggplot(full, aes(x = as.factor(time_num), y = full[probe_row])) + 
-  geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
-  geom_jitter(width = 0.3) + 
+#plot y = beta values for random cpg site for all samples, x= gestational age, plots divided by sample group, points colored by ethnicity
+ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) + 
+  #geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
+  geom_jitter(width = 0.5) + 
   facet_wrap(~Sample_Group) + 
   xlab("Gestational Age") + 
+  ylab("Beta values") +
+  ggtitle(paste("Beta values for CpG site", probe_name)) #+
+  #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
+
+#beta values for random cpG site, box plots of ethnicity
+ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
+  geom_boxplot(aes(fill=Ethnicity), show.legend = FALSE) + 
+  geom_jitter(width = 0.3) + 
+  facet_wrap(~sex) + 
+  xlab("Ethnicity") + 
   ylab("Beta values") +
   ggtitle(paste("Beta values for CpG site", probe_name)) +
   stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 
+
+```
+
+###1.2 Sample to Sample Correlations
+
+```{r Sample to Sample Correlations}
+
+#obtain sample names in order of ethnicity and then sample group
+full_ethnicity <- full[order(full$Ethnicity, full$Sample_Group),]
+order_ethnicity <- row.names(full_ethnicity)
+
+#order expression data by ethnicity and then sample group
+gsetFin2_ethnicity <- data[, order_ethnicity]
+
+#set the color pallette for heatmap
+cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
+
+heatmap.2(cor(gsetFin2_ethnicity), 
+          Rowv=NA, 
+          Colv=NA, 
+          dendrogram = "none",
+          trace="none",
+          col=cols, 
+          margins = c(8,8),
+          #labRow = c(full_time$labels),
+          #labCol = c(full_time$labels),
+          key.title = NA)
+title("Sample Correlations, 
+      Ordered by Ethnicity then sample group")
+
 ```
 
 
+```{r Sample to Sample Correlations2}
+
+#obtain sample names in order of ethnicity and then gender
+full_ethnicity_sex <- full[order(full$Ethnicity, full$sex),]
+order_ethnicity_sex <- row.names(full_ethnicity_sex)
+
+#order expression data by ethnicity and then gender
+gsetFin2_ethnicity_sex <- data[, order_ethnicity_sex]
+
+#set the color pallette for heatmap
+cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
+
+heatmap.2(cor(gsetFin2_ethnicity_sex), 
+          Rowv=NA, 
+          Colv=NA, 
+          dendrogram = "none",
+          trace="none",
+          col=cols, 
+          margins = c(8,8),
+          #labRow = c(full_time$labels),
+          #labCol = c(full_time$labels),
+          key.title = NA)
+title("Sample Correlations, 
+      Ordered by Ethnicity then Sex")
+
+```
+
+
+#Step 2: Unsupervised clustering
+
+###2.1: PCA on training data:
+
+```{r pca}
+pc.train <- prcomp(scale(t(data),center=T,scale = T))
+
+# look at the eigenvalues
+plot(pc.train, type = "1")
+```
+
+The `plot()` function returns a plot of the variances (y-axis) associated with the PCs (x-axis), which is useful to decide how many PCs to retain for further analysis.
+
+```{r pca.summary}
+summary(pc.train)
+```
+
+The `summary()` function describes the importance of the PCs. The first row describe again the standard deviation associated with each PC. The second row shows the proportion of the variance in the data explained by each component while the third row describe the cumulative proportion of explained variance.
+
+```{r plot PCs}
+#Plot seems unncessary and vector labels not working, ok to remove?
+#g <- ggbiplot(pc.train, obs.scale = 1, var.scale = 1, 
+              #groups = design$Ethnicity, ellipse = TRUE, 
+              #circle = TRUE)
+#g <- g + scale_color_discrete(name = '')
+#g <- g + theme(legend.direction = 'horizontal', 
+               #legend.position = 'top')
+#print(g)
+
+
+
+PC123 <- data.frame(pc.train$x[,1:5])              # Take out first 3 PCs
+PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
+                    left_join(design, 'Samplename')                         # Join the metadata info 
+head(PC123)            
+
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC1 and PC2: Ethnicity')
+
+ggplot(PC123, aes(x = PC1, y = PC3)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC1 and PC3: Ethnicity')
+
+ggplot(PC123, aes(x = PC2, y = PC3)) + 
+  geom_point(aes(color = Ethnicity)) +
+  ggtitle('PC2 and PC3: Ethnicity')
+```
+
+We can see from plotting the first three principal components that our groups (Asian, Caucasian) do not seem to separate. This indicates that the main drivers of the variance in the data is something else.
+
+```{r Plot other metadata}
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = sex)) +
+  ggtitle('Sex')
+
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = ga)) +
+  ggtitle('Gestational Age')
+
+ggplot(PC123, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = Sample_Group)) +
+  ggtitle('Sample Group')
+```
+
+It's not clear that our other variables are driving the variance in the data (sex, gestational age, and sample group).
+
+```{r Scatter plot matrix first 5 PCs}
+# scatter plot matrix for the first 5 PCs
+
+splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
+```
+
+Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
+
+
+
+Getting functional analysis for important CpG sites.
+
+```{r}
+
+#write.csv(x = data, file = "data.csv")
+
+#test <- as.data.frame.DataTable(c("cg06903451", "cg09843049", "cg09843049"))
+
+#write.table(x = test, file = "test.csv")
+
+#beta.file <- "data.txt"
+#project.folder <- getwd()
+#project.name <- "test"
+
+#source("COHCAPmodify.R")
+#beta.table <- COHCAPmodify(beta.file, project.name, project.folder, platform="450k-HMM", output.format = "xls")
+```
