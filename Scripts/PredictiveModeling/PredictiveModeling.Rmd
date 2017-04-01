@@ -20,6 +20,10 @@ library(limma)
 library(caret)
 library(dplyr)
 #library(glmnet)
+library(devtools)
+install_github("ggbiplot", "vqv")
+library(ggbiplot)
+
 ```
 
 Read in pre-processed data:
@@ -29,12 +33,12 @@ Read in pre-processed data:
 setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
-train.data <- read.table('../Data/Processed Data/data.txt')
+train.data <- read.table('../data/Processed Data/data.txt')
 str(train.data)
 ## row names are CpG sites, column names are sample names
 
 # load metadata
-design <- read.csv("../Data/Processed Data/des.txt", sep="\t", header=TRUE)
+design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
 colnames(train.data) == design$Samplename               # check that the samples are in same order
@@ -47,23 +51,30 @@ As Rob suggested, PCA should be the precursor to supervised classification, more
 ## PCA on training data:
 
 ```{r pca}
-pc.train <- prcomp(t(scale(t(train.data), center = T, scale = T)), center = F, scale = F)
+pc.train <- prcomp(scale(t(train.data),center=T,scale = T))
 
 # look at the eigenvalues
-plot(pc.train) # can we add some labels here (PC1, PC2, PC3,...)
+plot(pc.train, type = "l")
 ```
-Say something about the plot 
+The `plot()` function returns a plot of the variances (y-axis) associated with the PCs (x-axis), which is useful to decide how many PCs to retain for further analysis.
 
-```{r not sure what this chunk of code tells us, eval = FALSE, include = FALSE}
-pc.train$sdev
-diag((pc.train$sdev)^2)
-sum(diag((pc.train$sdev)^2))
-diag((pc.train$sdev)^2)[1,1]/sum(diag((pc.train$sdev)^2))
+```{r pca.summary}
+summary(pc.train)
 ```
+The `summary()` function describes the importance of the PCs. The first row describe again the standard deviation associated with each PC. The second row shows the proportion of the variance in the data explained by each component while the third row describe the cumulative proportion of explained variance.
 
-```{r Plot PC1 PC2 PC3}
-# first 2 PCS
-PC123 <- data.frame(pc.train$rotation[,c("PC1","PC2", "PC3")])              # Take out first 3 PCs
+```{r plot PCs}
+g <- ggbiplot(pc.train, obs.scale = 1, var.scale = 1, 
+              groups = design$Ethnicity, ellipse = TRUE, 
+              circle = TRUE)
+g <- g + scale_color_discrete(name = '')
+g <- g + theme(legend.direction = 'horizontal', 
+               legend.position = 'top')
+print(g)
+
+
+
+PC123 <- data.frame(pc.train$x[,1:5])              # Take out first 3 PCs
 PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
                     left_join(design, 'Samplename')                         # Join the metadata info 
 head(PC123)            
@@ -99,17 +110,20 @@ It's not clear that our other variables are driving the variance in the data (se
 
 ```{r Scatter plot matrix first 5 PCs}
 # scatter plot matrix for the first 5 PCs
-splom(pc.train$rotation[,1:5], panel = panel.smoothScatter, raster = TRUE)
+splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
 ```
-What does this plot show?
+Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
 
 ## PCA projection of loadings to test data:
 
+We can use the predict function if we observe new data and want to predict their PCs values.
+
 ```{r}
 # read pre-processed test data
+test.data <- read.table()
 
-# project PC loadings to test data
-
+# predict PCs for test set by projecting PC loadings to test data
+predict(pc.train, new.data = test.data)
 ```
 
 --------End of exploratory Analysis-----------
@@ -119,7 +133,7 @@ What does this plot show?
 
 ## logistic regression with elastic net regularization
 ```{r}
-#renamed just so that I can copy Amit's code
+#renamed just so that I can copy Amrit's code
 
 x.train <- train.data 
 y.train <- design$Ethnicity 
@@ -189,7 +203,7 @@ plot(glmImp, top = 35)
 ```
 
 ```{r Estimate test error by nested cv}
-# this is adapted from Amit's code from lec 19
+# this is adapted from Amrit's code from lec 19
 #use repeated CV to estimate test performance
 set.seed(2018)
 
