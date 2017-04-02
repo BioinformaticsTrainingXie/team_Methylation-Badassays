@@ -23,7 +23,14 @@ library(dplyr)
 library(devtools)
 install_github("ggbiplot", "vqv")
 library(ggbiplot)
+library(parallel)
+library(foreach)
+library(doParallel)
+```
 
+```{r create multiple processes}
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 ```
 
 Read in pre-processed data:
@@ -32,10 +39,14 @@ Read in pre-processed data:
 ```{r load data}
 setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
+dimension <- c(464923, 45) # to speed up data read-in
 # load data (pre-processed training set)
-train.data <- read.table('../data/Processed Data/data.txt')
+train.data <- read.table('../data/Processed Data/data.txt', colClasses = rep("numeric",dimension[2]),nrows = dimension[1])
 str(train.data)
 ## row names are CpG sites, column names are sample names
+# transpose our data to have rows as observations, which is more convenient later on for building models
+train.data <- as.data.frame(t(train.data))
+
 
 # load metadata
 design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
@@ -44,6 +55,28 @@ str(design)
 colnames(train.data) == design$Samplename               # check that the samples are in same order
 ```
 
+```{r}
+train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd)
+sd(train.sd)
+
+hist(train.sd)
+abline(v = mean(train.sd))
+
+# filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
+train.gsd <- subset(train.sd, train.sd > mean(train.sd))
+str(train.gsd)
+hist(train.gsd)
+
+```
+
+Read in test data:
+```{r}
+# read pre-processed test data
+test.data <- read.table("../data/Processed Data/Test data/GSE69502_Matrix.processed.detP.txt", row.names = 1, header = T)
+
+```
+
+
 # Step 1: Unsupervised clustering:
 ---------------this section is exploratory analysis, we should move this to Nivi's exploratory file----------
 As Rob suggested, PCA should be the precursor to supervised classification, more like an exploration.
@@ -51,7 +84,7 @@ As Rob suggested, PCA should be the precursor to supervised classification, more
 ## PCA on training data:
 
 ```{r pca}
-pc.train <- prcomp(scale(t(train.data),center=T,scale = T))
+pc.train <- prcomp(scale(train.data,center=T,scale = T))
 
 # look at the eigenvalues
 plot(pc.train, type = "l")
@@ -119,9 +152,6 @@ Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can c
 We can use the predict function if we observe new data and want to predict their PCs values.
 
 ```{r}
-# read pre-processed test data
-test.data <- read.table()
-
 # predict PCs for test set by projecting PC loadings to test data
 predict(pc.train, new.data = test.data)
 ```
@@ -157,7 +187,8 @@ fitControl <- trainControl(method = "repeatedcv",
                            ## Evaluate performance using 
                            ## the following function
                            summaryFunction = twoClassSummary,
-													 savePredictions = TRUE      # Saves ROC results
+													 savePredictions = TRUE,      # Saves ROC results
+													 allowParallel = TRUE
 													 )  
 ```
 
@@ -165,7 +196,7 @@ fitControl <- trainControl(method = "repeatedcv",
 ```{r tune glmnet parameters}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
 
-system.time(netFit <- train(x = t(x.train),   # samples need to be in rows, features need to be columns
+system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
 								method = "glmnet",                     # glmnet model
 								trControl = fitControl,                # use fitControl to specify cross validation
@@ -210,7 +241,7 @@ set.seed(2018)
 # list of lists containing fold ids
 folds <- lapply(1:M, function(i) createFolds(y.train, k = k))
 
-netTesterror <- lapply(folds, function(i){
+system.time(netTesterror <- lapply(folds, function(i){
   lapply(i, function(j){
     # tune parameters with CV
     set.seed(2019)
@@ -219,11 +250,11 @@ netTesterror <- lapply(folds, function(i){
 													 repeats = M,
 													 classProbs = TRUE,
                            summaryFunction = twoClassSummary,
-													 savePredictions = TRUE)
+													 savePredictions = TRUE, allowParallel = T)
     
     
     # build elastic net classifier
-    netFit <- train(x =  t(x.train)[-j,],   
+    netFit <- train(x =  x.train[-j,],   
 								y = y.train[-j],                  
 								method = "glmnet",                     
 								trControl = fitControl,
@@ -231,12 +262,13 @@ netTesterror <- lapply(folds, function(i){
 								metric = 'ROC')   
     
     # Estimate probabilities of test predictions
-    probTest <- predict(netFit, t(x.train)[j,], type = 'prob')
+    probTest <- predict(netFit, x.train[j,], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
 
   })
 })
+)
 netTesterror
 ```
 
@@ -269,3 +301,25 @@ text(x = 60, y = 40, labels =
        paste0('mean AUC = ', round(mean(unlist(Performance['auc',])), 1),
               '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
 ```
+
+
+
+# Step 3: Predict Ethnicity for Test Set
+
+Use eirarchical clustering to visualize the cluster 
+```{r predict ethnicity for test set}
+y.predict <- predict(netFit, newdata = x.test)
+
+# Hierarchical clustering of predicted data
+distance <- dist(y.predict, method="euclidean") 
+cluster <- hclust(distance, method="average")
+plot(cluster, hang=-1, label=y.predict)
+
+```
+
+# Step 4: Differentially Methylated Sites for Test Set
+
+```{r}
+
+```
+
