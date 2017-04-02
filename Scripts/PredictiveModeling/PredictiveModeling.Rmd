@@ -21,6 +21,7 @@ library(caret)
 library(dplyr)
 #library(glmnet)
 library(devtools)
+library(kernlab)
 install_github("ggbiplot", "vqv")
 library(ggbiplot)
 library(parallel)
@@ -162,7 +163,7 @@ predict(pc.train, new.data = test.data)
 
 
 ## logistic regression with elastic net regularization
-```{r}
+```{r rename}
 #renamed just so that I can copy Amrit's code
 
 x.train <- train.data 
@@ -172,7 +173,7 @@ y.train <- design$Ethnicity
 ```{r subset data for faster run time, eval = FALSE, include = FALSE}
 # since the data is very large (~450k rows), I will subset the data first to be able to play around with the code quickly.
 
-x.train <- train.data[1:1000,] #takes the first 1000 rows=
+x.train <- train.data[,1:1000] #takes the first 1000 rows=
 ```
 
 ```{r Specify resampling method}
@@ -194,7 +195,10 @@ fitControl <- trainControl(method = "repeatedcv",
 
 
 ```{r tune glmnet parameters}
-set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness                                                             ensures reproducibility
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
+                                                    .lambda = c((1:5)/10)) # grid of tuning parameters to try out
 
 system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
@@ -224,7 +228,7 @@ plot(netFit, metric = "ROC", plotType = "level",
 ```{r extract features}
 predictors <- predictors(netFit)
 predictors
-length(predictors) 
+length(predictors)
 ```
 Looks like our model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
@@ -254,7 +258,7 @@ system.time(netTesterror <- lapply(folds, function(i){
     
     
     # build elastic net classifier
-    netFit <- train(x =  x.train[-j,],   
+    netFit <- train(x =  x.train[,-j],   
 								y = y.train[-j],                  
 								method = "glmnet",                     
 								trControl = fitControl,
@@ -262,7 +266,7 @@ system.time(netTesterror <- lapply(folds, function(i){
 								metric = 'ROC')   
     
     # Estimate probabilities of test predictions
-    probTest <- predict(netFit, x.train[j,], type = 'prob')
+    probTest <- predict(netFit, x.train[,j], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
 
@@ -302,15 +306,118 @@ text(x = 60, y = 40, labels =
               '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
 ```
 
+## Support Vector Machine
+
+```{r tune parameters}
+#Train and Tune the SVM
+svm.tune <- train(x = x.train,
+                  y= y.train,
+                  method = "svmRadial",   # Radial kernel
+                  tuneLength = 9,					# 9 values of the cost function
+                  preProc = c("center","scale"),  # Center and scale data
+                  metric="ROC",
+                  trControl=fitControl)
+svm.tune
+```
+
+The tuneLength parameter is set to pick 9 arbitrary values for the C, the "cost" of the radial kernel. This parameter controls the complexity of the boundary between support vectors. The radial kernel also requires setting a smoothing parameter, sigma.
+
+```{r fine-tune parameters}
+# Use the expand.grid to specify the search space	
+grid <- expand.grid(sigma = c(.0001, .001, 0.0002),
+                    C = 2:8)
+
+ 
+#Train and Tune the SVM
+svm.tune <- train(x=x.train,
+                    y= y.train,
+                    method = "svmRadial",
+                    preProc = c("center","scale"),
+                    metric="ROC",
+                    tuneGrid = grid,
+                    trControl=fitControl)
+ 
+svm.tune
+```
+
+```{r Estimate test error by nested cv}
+# this is adapted from Amrit's code from lec 19
+#use repeated CV to estimate test performance
+set.seed(2018)
+
+# list of lists containing fold ids
+folds <- lapply(1:M, function(i) createFolds(y.train, k = k))
+
+system.time(svmTesterror <- lapply(folds, function(i){
+  lapply(i, function(j){
+    # tune parameters with CV
+    set.seed(2019)
+    fitControl <- trainControl(method = "repeatedcv", 
+													 number = k,                 
+													 repeats = M,
+													 classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE, allowParallel = T)
+    
+    
+    # build SVM classifier
+svm.fit <- train(x=x.train[,-j],
+                    y= y.train[-j],
+                    method = "svmRadial",
+                    preProc = c("center","scale"),
+                    metric="ROC",
+                    trControl=fitControl)
+    
+    # Estimate probabilities of test predictions
+    probTest <- predict(svmFit, x.train[,j], type = 'prob')
+    ethProb <- probTest[,'Asian']
+    ethProb
+
+  })
+})
+)
+svmTesterror
+```
+
+```{r Performance}
+# Computer classification performance measures
+# enet
+Performance <- mapply(function(x, y){
+  auc <- pROC::roc(y.train[unlist(x)], unlist(y),
+                   direction ='<',
+                   levels = c('Caucasian', 'Asian'),
+                   percent = TRUE)
+  list(tpr = auc$sensitivities,
+       fpr = 100 - auc$specificities,
+       auc = round(auc$auc, 2))
+}, x = folds, y = svmTesterror)
+Performance
+```
+
+```{r ROC curve}
+# plot ROC curve
+
+plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
+     type = 'l', col = 1, xlab = '100 - sensitivity',
+     ylab = 'Sensitivity', main = 'Enet')
+for(i in length(folds)){
+  points(Performance['tpr',][[i]] ~ Performance['fpr',][[i]],
+         type = 'l', col = 2)
+}
+text(x = 60, y = 40, labels =
+       paste0('mean AUC = ', round(mean(unlist(Performance['auc',])), 1),
+              '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
+```
+
 
 
 # Step 3: Predict Ethnicity for Test Set
 
-Use eirarchical clustering to visualize the cluster 
+Use heirarchical clustering to visualize the cluster 
 ```{r predict ethnicity for test set}
 y.predict <- predict(netFit, newdata = x.test)
 
-# Hierarchical clustering of predicted data
+# Heirarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 distance <- dist(y.predict, method="euclidean") 
 cluster <- hclust(distance, method="average")
 plot(cluster, hang=-1, label=y.predict)
