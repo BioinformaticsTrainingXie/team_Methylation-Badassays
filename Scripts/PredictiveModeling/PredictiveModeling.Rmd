@@ -68,6 +68,7 @@ train.gsd <- subset(train.sd, train.sd > mean(train.sd))
 str(train.gsd)
 hist(train.gsd)
 
+train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
 Read in test data:
@@ -167,6 +168,7 @@ predict(pc.train, new.data = test.data)
 #renamed just so that I can copy Amrit's code
 
 x.train <- train.data 
+# x.train <- train.data.gsd
 y.train <- design$Ethnicity 
 ```
 
@@ -413,11 +415,11 @@ text(x = 60, y = 40, labels =
 
 # Step 3: Predict Ethnicity for Test Set
 
-Use heirarchical clustering to visualize the cluster 
+Use hierarchical clustering to visualize the cluster 
 ```{r predict ethnicity for test set}
 y.predict <- predict(netFit, newdata = x.test)
 
-# Heirarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
+# Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 distance <- dist(y.predict, method="euclidean") 
 cluster <- hclust(distance, method="average")
 plot(cluster, hang=-1, label=y.predict)
