@@ -260,7 +260,7 @@ system.time(netTesterror <- lapply(folds, function(i){
     
     
     # build elastic net classifier
-    netFit <- train(x =  x.train[,-j],   
+    netFit <- train(x =  x.train[-j,],   
 								y = y.train[-j],                  
 								method = "glmnet",                     
 								trControl = fitControl,
@@ -268,7 +268,7 @@ system.time(netTesterror <- lapply(folds, function(i){
 								metric = 'ROC')   
     
     # Estimate probabilities of test predictions
-    probTest <- predict(netFit, x.train[,j], type = 'prob')
+    probTest <- predict(netFit, x.train[j,], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
 
@@ -363,15 +363,16 @@ system.time(svmTesterror <- lapply(folds, function(i){
     
     
     # build SVM classifier
-svm.fit <- train(x=x.train[,-j],
+svm.fit <- train(x=x.train[-j,],
                     y= y.train[-j],
                     method = "svmRadial",
                     preProc = c("center","scale"),
+                 tuneLength = 9,
                     metric="ROC",
                     trControl=fitControl)
     
     # Estimate probabilities of test predictions
-    probTest <- predict(svmFit, x.train[,j], type = 'prob')
+    probTest <- predict(svmFit, x.train[j,], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
 
