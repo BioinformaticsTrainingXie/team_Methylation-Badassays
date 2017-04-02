@@ -1,0 +1,50 @@
+---
+title: "FunctionalAnalysis"
+author: "Nivretta Thatra"
+output: github_document
+---
+
+#Step 0: Load Packages and Data
+Load required packages:
+
+
+```{r load packages}
+
+
+
+#getting cpg site functional info
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("COHCAP")
+
+library("COHCAP")
+library(dplyr)
+library(tidyverse)
+library(plyr)
+
+```
+
+Load a set of CpG sites of interest
+
+```{r}
+
+#I've saved a set of interesting "test" sites in testCpGsites.txt
+
+interestingSites <- read.table("testCpGsites.txt")
+
+```
+
+#Step 1: Annotation to chromosome, gene, and CpG Islands
+
+The [COHCAP](https://www.bioconductor.org/packages/devel/bioc/manuals/COHCAP/man/COHCAP.pdf) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes.
+
+```{r}
+
+colnames(interestingSites) <- c("SiteID")
+
+data(COHCAP.450k.HMM)
+    
+annotated <- join(interestingSites, COHCAP.450k.HMM)
+knitr::kable(head(annotated)) 
+
+```
+
