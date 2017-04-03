@@ -151,15 +151,22 @@ svmFit
 ```
 # Step 3: Predict Ethnicity for Test Set
 
+## 3.1 glmnet
 ```{r predict ethnicity for test set}
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
 #x.test <- test.data[,colnames(test.data)%in% predictors(netFit)]
 
-y.predict <- predict(netFit,  x.test, type = 'prob')
-y.predict
-
-design$Ethnicity == make.names(levels(design$Ethnicity))
+y.predictNet <- predict(netFit,  x.test, type = 'prob')
+y.predictNet
 ```
+## 3.2 SVM 
+
+```{r SVM predict on test, eval = FALSE}
+y.predictSVM <- predict(svmFit,  x.test, type = 'prob')
+#throws a warning
+y.predictSVM
+```
+
 
 Use hierarchical clustering to visualize the cluster 
 
@@ -185,7 +192,7 @@ system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, feat
 
 ```
 
-```{r}
+```{r examine CV}
 trellis.par.set(caretTheme())
 ggplot(netFit100)
 #heatmap of results
