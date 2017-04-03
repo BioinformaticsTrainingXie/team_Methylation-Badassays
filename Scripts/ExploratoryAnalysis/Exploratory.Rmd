@@ -230,6 +230,16 @@ Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can c
 We can use the predict function if we observe new data and want to predict their PCs values.
 
 ```{r}
-# predict PCs for test set by projecting PC loadings to test data
+#download test data from dropbox
+#testdata.txt is in gitignore, be sure not to try to push to github
+download.file("https://www.dropbox.com/s/gjmtofnktayl6m1/testdata.txt?dl=1", "testdata.txt")
+
+#read in test data
+test.data <- read.table("testdata.txt", row.names = 1, header = T)
+test.data <- as.data.frame(t(test.data))
+sum(is.na(test.data)) # 52000 total entries that are NA
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+
+#predict PCs for test set by projecting PC loadings to test data
 predict(pc.train, new.data = test.data)
 ```

@@ -70,7 +70,7 @@ str(DMR.CpG, max.level = 0)
 
 limma_top100_ethinicity <- list(rownames(DMR100))
 
-write_rds(list(rownames(DMR100)), path = "limma_top100_ethinicity")
+write_rds(list(rownames(DMR100)), path = "limma_top100_ethinicity.rds")
 
 #plot heatmap
 ###LABELS WRONG AT THE MOMENT...
