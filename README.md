@@ -14,7 +14,7 @@ For the details of the project ideas, dataset and methods we use in this porject
 
 2. [Progress report](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/progress_report.md): Progress report contains the progress about our project.
 
-3. [Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data)
+3. [Data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data) folder contains metadata, raw data, and processed data.
 
 * [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Data/Raw%20Data/samplesheet.csv)
   + human placental tissue from 45 subjects with self reported ethnicity
@@ -27,10 +27,10 @@ For the details of the project ideas, dataset and methods we use in this porject
 * [Processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data) this folder contains the processed data processed from raw data.
 
 4. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts): scripts folder contains the script for:
-    * [preprosessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md):This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains scripts process raw data to processed data.
+    * [Preprosessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md):This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains scripts process raw data to processed data.
     
     * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis) contains scripts to identify differentially methylated CpG sites between Caucasians and Asians in placental tissue. 
     
-    * [predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to use the identified CpG sites from [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) to determine the genetic ancestry of [a second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8) whose genetic ancestry is unknown.
+    * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to use the identified CpG sites from [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) to determine the genetic ancestry of [a second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8) whose genetic ancestry is unknown.
 
 5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) folder contains the results. 
