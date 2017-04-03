@@ -52,7 +52,7 @@ Michael - Accessory (will help out wherever is needed)
 
 Everybody will help out on the poster.
 
-### Section 2: [What is the progress of the analyses](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) (4 pts.)
+### Section 2: What is the progress of the analyses (4 pts.)
 
 ##### S.2.1: Since your initial proposal, you should have decided more concretely on what methods to use for each step of your analyses, and employed some of those methods.
 
@@ -77,7 +77,7 @@ It is important to normalize 450k data because of the technical biases introduce
 
 Figure 1)
 
-![Raw](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-12-1.png)
+![Raw](https://cloud.githubusercontent.com/assets/24922214/24594166/2a505a46-17df-11e7-8318-4fe96c69c281.png)
 
 There are a couple different normalization methods used in DNA methylation analysis; however, there isn't a consensus on which method is the best and metrics to evaluate how good normalization methods perform are vague and unclear. So we tried different available normalization methods to see which one works better. The normalization methods we tried are noob, functional normalization and quantile normalization.
 
@@ -87,15 +87,15 @@ The plots we obtained by applying the three normalization methods are:
 
 Figure 2a)
 
-![Noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-1.png)
+![Noob](https://cloud.githubusercontent.com/assets/24922214/23965730/2b3f9984-0976-11e7-8e82-5268c1f0173c.png)
 
 Figure 2b)
 
-![funNorm\_noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-2.png)
+![funNorm\_noob](https://cloud.githubusercontent.com/assets/24922214/23965740/3467b6e0-0976-11e7-8806-c8f9deea0b51.png)
 
 Figure 2c)
 
-![Quantile](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-3.png)
+![Quantile](https://cloud.githubusercontent.com/assets/24922214/23965746/38498f36-0976-11e7-8dc7-c840d19c0b9b.png)
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset. We chose functional normalization, but are unsure whether Quantile would be better, or if the difference is negligible.
 
