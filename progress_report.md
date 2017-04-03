@@ -52,7 +52,7 @@ Michael - Accessory (will help out wherever is needed)
 
 Everybody will help out on the poster.
 
-### Section 2: [What is the progress of the analyses](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) (4 pts.)
+### Section 2: What is the progress of the analyses (4 pts.)
 
 ##### S.2.1: Since your initial proposal, you should have decided more concretely on what methods to use for each step of your analyses, and employed some of those methods.
 
@@ -77,7 +77,7 @@ It is important to normalize 450k data because of the technical biases introduce
 
 Figure 1)
 
-![Raw](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-12-1.png)
+![Raw](https://cloud.githubusercontent.com/assets/24922214/24594166/2a505a46-17df-11e7-8318-4fe96c69c281.png)
 
 There are a couple different normalization methods used in DNA methylation analysis; however, there isn't a consensus on which method is the best and metrics to evaluate how good normalization methods perform are vague and unclear. So we tried different available normalization methods to see which one works better. The normalization methods we tried are noob, functional normalization and quantile normalization.
 
@@ -87,15 +87,15 @@ The plots we obtained by applying the three normalization methods are:
 
 Figure 2a)
 
-![Noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-1.png)
+![Noob](https://cloud.githubusercontent.com/assets/24922214/23965730/2b3f9984-0976-11e7-8e82-5268c1f0173c.png)
 
 Figure 2b)
 
-![funNorm\_noob](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-2.png)
+![funNorm\_noob](https://cloud.githubusercontent.com/assets/24922214/23965740/3467b6e0-0976-11e7-8806-c8f9deea0b51.png)
 
 Figure 2c)
 
-![Quantile](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC_files/figure-html/unnamed-chunk-13-3.png)
+![Quantile](https://cloud.githubusercontent.com/assets/24922214/23965746/38498f36-0976-11e7-8dc7-c840d19c0b9b.png)
 
 A good preprocessing method should make the peaks of type 1 & 2 probe distributions close together, so functional normalization and quantile normalization appears to be better at this task with our dataset. We chose functional normalization, but are unsure whether Quantile would be better, or if the difference is negligible.
 
@@ -105,9 +105,9 @@ We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organiz
 
 ##### S.2.5: Provide the links to any markdown reports within your repo to refer to the relevant analysis.
 
-See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md).
+See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing).
 
-See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md).
+See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis).
 
 ### References:
 
@@ -129,11 +129,11 @@ See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylati
 
 ### Section 3: Results (2 pts.)
 
-Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing .md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
+Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing.md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
 
 <<<<<<< HEAD
 ##### Were you able to answer your hypothesis?
 
 ##### Did you have any positive results? If no, postulate a discussion as to why that may be. Provide plots and/or tables to present your results. - List some challenges that you encountered? How will you address them?
 =======
-##### What are your primary results? We tried to do some preliminary exploratory analysis: [Here is an md describing snafus](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md) and the start of an [Rmd](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory2.Rmd) working off of the pre processing script.
+##### What are your primary results? We tried to do some preliminary exploratory analysis: [Here is an md describing snafus](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md) and the start of an [Rmd](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) working off of the pre processing script.
