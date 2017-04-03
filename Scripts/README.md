@@ -1,4 +1,4 @@
-##### This folder contains the scripts for the project.
+### This folder contains the scripts for the project.
 
 This folder contains the scripts to process raw data to processed data.
 

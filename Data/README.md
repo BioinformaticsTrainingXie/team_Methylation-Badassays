@@ -1,4 +1,4 @@
-## The Methylation Badsassays: Data
+### The Methylation Badsassays: Data
 
 This folder contains metadata, raw data, and processed data.
 

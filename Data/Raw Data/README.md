@@ -1,4 +1,4 @@
-##### This folder contains raw data for Methylation-Badsassays group
+### This folder contains raw data for Methylation-Badsassays group
 
 * The [IDATS subdirectory](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Raw%20Data/IDATS) contains the raw .IDAT files. Each sample has two IDAT files corresponding to the red-green channels that cumulatively measure methylation.
 
