@@ -107,7 +107,7 @@ We used mainly the ‘Minfi’ package for preprocessing. Dplyr for data organiz
 
 See [preprocessing work](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md).
 
-See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/Exploratory.md).
+See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis).
 
 ### References:
 
@@ -129,7 +129,7 @@ See [exploratory analysis attempt](https://github.com/STAT540-UBC/team_Methylati
 
 ### Section 3: Results (2 pts.)
 
-Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing .md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/data/Scripts/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
+Unfortunately we were unable to produce significant results at this point in time. The preprocessing took longer than what was expected. Please see our [preprocessing.md file](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to see what work we've done. We realize we probably shouldn't have spent so much time on the preprocessing but as Meg mentioned in the lecture that the preprocessing was very important, we focused a lot of our attention here. We have, however, thought a lot about how we are going to do the analysis, and it is becoming a lot clearer where to go from here. See section 1 for a brief outline of the plan (thanks @rbalshaw @farnushfarhadi @singha53 for the guidance!). It's still subject to change but the skeleton is there. 
 
 <<<<<<< HEAD
 ##### Were you able to answer your hypothesis?
