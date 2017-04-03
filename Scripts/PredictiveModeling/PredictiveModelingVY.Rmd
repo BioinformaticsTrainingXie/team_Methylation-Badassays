@@ -135,7 +135,7 @@ netFit
 ```{r extract features}
 predictorsNet <- predictors(netFit)
 length(predictorsNet)
-write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
+#write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
 ```
 Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
@@ -167,7 +167,7 @@ x.test <- test.data[,colnames(test.data) %in% names(x.train)]
 
 y.predictNet <- predict(netFit,  x.test)
 y.predictNet
-saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
+#saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
 ## 3.2 SVM 
 
@@ -179,28 +179,55 @@ y.predictSVM
 
 
 # 4.0 Analysis of Predictors
-
+Here we pull out the CpG sites and look at them more closely. First we will see if clustering with only the predictors separates asians and caucasians
 ## 4.1 Clustering
-
-```{r Clustering test data}
-# Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
-hclust <- hclust(dist(x.test, method = 'euclidean'))
-
-library(sparcl) # for coloring dendrogram
-# colors the leaves of a dendrogram
-y = cutree(hclust, 2)
-ColorDendrogram(hclust, y=y, labels = names(y), branchlength = 2)
+```{r load package}
+library(ggdendro)
 ```
 
 ```{r clustering train based on predictors}
+#without all CpGs used to train
+hclust <- hclust(dist(x.train, method = 'euclidean'))
+
+#swap labels with ethnicity
+swaplabels <- function(hclust, des){     # des is a design matrix containing 'Samplename' and 'Ethnicity' col
+  labels <- data.frame(labels(hclust))   # pulls out current labels (samplename)
+  colnames(labels) <- 'Samplename'
+  labels <- labels %>% left_join(select(des, Samplename, Ethnicity), by = 'Samplename')
+  labels(hclust) <- labels(hclust) <- as.character(labels$Ethnicity)
+  return(hclust)
+}
+
+hclust <- swaplabels(hclust, design)
+y1 = cutree(hclust, 3)
+ColorDendrogram(hclust, y = y1, labels = names(y1), branchlength = 1.0, main = 'Clustering train on all CpGs')
+
+#with predictors only
 x.train.predictors <- x.train[,colnames(x.train) %in% predictorsNet]
-x.train.predictors
-x.train[,]
+hclust2 <- hclust(dist(x.train.predictors, method = 'euclidean'))
+hclust2 <- swaplabels(hclust2, design)          #swap labels with ethnicity
+y2 = cutree(hclust2, 2)
+ColorDendrogram(hclust2, y = y2, labels = names(y2), branchlength = 0.3, main = 'Clustering train with predictors only')
 ```
-##
+
+```{r Clustering test data}
+# Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
+hclust3 <- hclust(dist(x.test, method = 'euclidean'))
+y3 = cutree(hclust3, 2)
+ColorDendrogram(hclust3, y=y3, labels = names(y3), branchlength = 2, main = 'Clustering Test with all CpGs')
+
+# clustering only with the predictors
+x.test.predictors <- x.test[,colnames(x.test) %in% predictorsNet]
+hclust4 <- hclust(dist(x.test.predictors, method = 'euclidean'))
+labels(hclust4) <- ''
+y4 = cutree(hclust4, 1)
+ColorDendrogram(hclust4, y=y4, labels = names(y4), branchlength = 0.25, main = 'Clustering Test with predictors only')
+```
+
+## 4.2 Plot CpG Predictors
 ```{r plot top 35}
 glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp, top = 51)
+plot(glmImp, top = 11)
 ```
 
 ### This section is to tune parameters across 100 different combinations of alpha and lambda
