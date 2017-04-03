@@ -13,10 +13,7 @@ library(ggplot2)
 library(limma)
 library(caret)
 library(dplyr)
-
-
 library(parallel)
-
 library(doParallel)
 ```
 
@@ -33,8 +30,7 @@ Read in pre-processed data:
 
 # load data (pre-processed training set)
 train.data <- read.table('./data/Processed Data/data.txt')
-str(train.data)
-## row names are CpG sites, column names are sample names
+str(train.data)                                   ## row names are CpG sites, column names are sample names
 # transpose our data to have rows as observations, which is more convenient later on for building models
 train.data <- as.data.frame(t(train.data))
 
@@ -43,7 +39,6 @@ design <- read.csv("./data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
 row.names(train.data) == design$Samplename               # check that the samples are in same order
-design
 ```
 
 Read in test data:
@@ -78,7 +73,7 @@ train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 # Step 2: Supervised classification:
 
 
-## logistic regression with elastic net regularization
+## 2.1 logistic regression with elastic net regularization
 ```{r rename}
 #renamed just so that I can copy Amrit's code
 x.train <- train.data.gsd
@@ -107,7 +102,7 @@ fitControl <- trainControl(method = "repeatedcv",
 													 )  
 
 netGrid <- expand.grid(alpha = c(0.75),
-                           lambda = c(0.077, 0.25))
+                           lambda = c(0.077))
 ```
 
 
@@ -123,51 +118,80 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 								trControl = fitControl,                # use fitControl to specify cross validation
 								tuneGrid = netGrid,
 								preProcess = c( "center", "scale"),    # Center and Scale the data
-								metric = 'ROC')                        # ROC because distribution is slightly skewed
+								metric = 'Accuracy')                        # ROC because distribution is slightly skewed
 )
 
 netFit
-#saveRDS(netFit, './Data/Processed Data/netFit_alpha75_lambda25.rds')
+saveRDS(netFit, './Data/Processed Data/netFit_alpha75_lambda077.rds')
 ```
 
 ```{r extract features}
 predictorsNet <- predictors(netFit)
 length(predictorsNet)
-
 ```
-Looks like our model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
+Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
+## 2.2 SVM linear
+
+```{r svm linear}
+svmControl <- trainControl(method="repeatedcv",   
+                           number = 5,
+                           repeats=3,		    
+                           summaryFunction=twoClassSummary,	# Use AUC to pick the best model
+                           classProbs=TRUE,
+                           allowParallel = TRUE)
+
+system.time(svmFit <- train(x=x.train,
+                            y= y.train,
+                            method = "svmLinear",
+                            preProc = c("center","scale"),
+                            metric="ROC",
+                            trControl= svmControl)	)
+svmFit
+```
 # Step 3: Predict Ethnicity for Test Set
 
 ```{r predict ethnicity for test set}
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
 #x.test <- test.data[,colnames(test.data)%in% predictors(netFit)]
 
-y.predict <- predict(netFit,  x.test, type = 'prob'$Ethnicity == make.names(levels(design$Ethnicity))
+y.predict <- predict(netFit,  x.test, type = 'prob')
+y.predict
+
+design$Ethnicity == make.names(levels(design$Ethnicity))
 ```
 
 Use hierarchical clustering to visualize the cluster 
 
-
-
-
+### This section is to tune parameters across 100 different combinations of alpha and lambda
 
 ```{r tune glmnet parameters 10 by 10, eval = FALSE, include = FALSE}
-netGrid100 <-  expand.grid(alpha = c(0.75),
-                           lambda = c(0.077, 0.25))
+netGrid100 <-  expand.grid(alpha = c(0.20, 0.40, 0.60, 0.80, 1.00),
+                           lambda = c(0.05, 0.10, 0.15, 0.20, 0.25))
 
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
 
 #netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
  #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
 
-system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
+system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
 								method = "glmnet",                     # glmnet model
 								trControl = fitControl,                # use fitControl to specify cross validation
-								tuneGrid = netGrid,
+								tuneGrid = netGrid100,
 								preProcess = c( "center", "scale"),    # Center and Scale the data
 								metric = 'ROC')                        # ROC because distribution is slightly skewed
 )
 
-netFit
+```
+
+```{r}
+trellis.par.set(caretTheme())
+ggplot(netFit100)
+#heatmap of results
+plot(netFit100, metric = "ROC", plotType = "level",
+     scales = list(x = list(rot = 90)))
+length(predictors(netFit100))
+glmImp100 <- varImp(netFit100, scale = F) # gives the t-statistic for all CpGs in the dataset
+plot(glmImp100, top = 50)
+```
