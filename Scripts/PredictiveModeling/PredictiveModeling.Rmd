@@ -38,11 +38,10 @@ Read in pre-processed data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r load data}
-setwd('../')                                           # note: all of these relative file path calls work only for knitting
+#setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
-dimension <- c(464923, 45) # to speed up data read-in
 # load data (pre-processed training set)
-train.data <- read.table('../data/Processed Data/data.txt', colClasses = rep("numeric",dimension[2]),nrows = dimension[1])
+train.data <- read.table('./data/Processed Data/data.txt')
 str(train.data)
 ## row names are CpG sites, column names are sample names
 # transpose our data to have rows as observations, which is more convenient later on for building models
@@ -50,34 +49,40 @@ train.data <- as.data.frame(t(train.data))
 
 
 # load metadata
-design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
+design <- read.csv("./data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
-colnames(train.data) == design$Samplename               # check that the samples are in same order
+row.names(train.data) == design$Samplename               # check that the samples are in same order
 ```
 
+Read in test data:
 ```{r}
+# read pre-processed test data
+test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- as.data.frame(t(test.data))
+```
+
+```{r filter training data to contain the same CpGs as the test}
+train.data <- train.data[,colnames(train.data) %in% colnames(test.data)]
+```
+
+## Prefiltering cpgs 
+
+```{r prefiltering based on SD}
 train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd)
 sd(train.sd)
-
 hist(train.sd)
 abline(v = mean(train.sd))
 
 # filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
-train.gsd <- subset(train.sd, train.sd > mean(train.sd))
+train.gsd <- subset(train.sd, train.sd > 0.10)
 str(train.gsd)
 hist(train.gsd)
 
 train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
-Read in test data:
-```{r}
-# read pre-processed test data
-test.data <- read.table("../data/Processed Data/Test data/GSE69502_Matrix.processed.detP.txt", row.names = 1, header = T)
-
-```
-
+#### We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
 
 # Step 1: Unsupervised clustering:
 ---------------this section is exploratory analysis, we should move this to Nivi's exploratory file----------
@@ -167,15 +172,14 @@ predict(pc.train, new.data = test.data)
 ```{r rename}
 #renamed just so that I can copy Amrit's code
 
-x.train <- train.data 
-# x.train <- train.data.gsd
+x.train <- train.data.gsd
 y.train <- design$Ethnicity 
 ```
 
 ```{r subset data for faster run time, eval = FALSE, include = FALSE}
 # since the data is very large (~450k rows), I will subset the data first to be able to play around with the code quickly.
 
-x.train <- train.data[,1:1000] #takes the first 1000 rows=
+x.train <- train.data.gsd[,1:1000] #takes the first 1000 columns (cpgs)
 ```
 
 ```{r Specify resampling method}
@@ -193,25 +197,43 @@ fitControl <- trainControl(method = "repeatedcv",
 													 savePredictions = TRUE,      # Saves ROC results
 													 allowParallel = TRUE
 													 )  
+
+netGrid <- expand.grid(alpha = c(0.55, 0.75, 0.9),
+                           lambda = c(0.077, 0.25))
 ```
 
 
 ```{r tune glmnet parameters}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
 
-netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
-                                                    .lambda = c((1:5)/10)) # grid of tuning parameters to try out
+#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
+ #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
 
 system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
 								method = "glmnet",                     # glmnet model
 								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
 								preProcess = c( "center", "scale"),    # Center and Scale the data
 								metric = 'ROC')                        # ROC because distribution is slightly skewed
 )
 
 netFit
+saveRDS(netFit, './Data/Processed Data/netFit_alpha55_lambda_077_51pred.rds')
 ```
+
+```{r svm}
+system.time(svmFit <- train(x = x.train,
+                            y = y.train,
+                            method = 'svmLinear',
+                            trcontrol = fitControl,
+                            preProcess = c('center', 'scale'),
+                            metric = 'ROC'
+                            ))
+svmFit
+
+```
+
 Cross validation with a fold of k = 5 (making each fold 9 samples large), was used to determine the optimal tuning parameters.
 
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
@@ -221,22 +243,28 @@ Horvath, S. (2013). DNA methylation age of human tissues and cell types. Genome 
 ```{r examine results}
 trellis.par.set(caretTheme())
 ggplot(netFit)
+ggplot(svmFit)
 
 #heatmap of results
 plot(netFit, metric = "ROC", plotType = "level",
      scales = list(x = list(rot = 90)))
+
+plot(svmFit, metric = "ROC", plotType = "level",
+     scales = list(x = list(rot = 90)))
 ```
 
 ```{r extract features}
-predictors <- predictors(netFit)
-predictors
-length(predictors)
+predictorsNet <- predictors(netFit)
+length(predictorsNet)
+
+predictorsSvm <- predictors(svmFit)
+length(predictorsSvm)
 ```
 Looks like our model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
 ```{r plot top 35}
 glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp, top = 35)
+plot(glmImp, top = 51)
 ```
 
 ```{r Estimate test error by nested cv}
@@ -418,7 +446,16 @@ text(x = 60, y = 40, labels =
 
 Use hierarchical clustering to visualize the cluster 
 ```{r predict ethnicity for test set}
-y.predict <- predict(netFit, newdata = x.test)
+x.test <- t(test.data)
+x.test[1:6,1:6]
+
+predictors(netFit) %in% rownames(test.data)
+
+x.test <- x.test[,colnames(t(test.data))%in% predictors(netFit)]
+sum(is.na(x.test))
+
+select(x.test, contains(NA))
+y.predict <- predict(netFit,  x.test)
 
 # Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 distance <- dist(y.predict, method="euclidean") 
