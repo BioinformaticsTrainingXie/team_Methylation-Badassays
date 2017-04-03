@@ -1,0 +1,173 @@
+---
+title: "ModelBuilding"
+author: "Victor"
+date: "April 2, 2017"
+output: html_document
+---
+```{r load packages}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite('e1071')                                    # required for glmnet in caret
+#biocLite('pROC')
+library(pROC)
+library(ggplot2)
+library(limma)
+library(caret)
+library(dplyr)
+
+
+library(parallel)
+
+library(doParallel)
+```
+
+```{r parallel processing}
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+```
+
+Read in pre-processed data:
+*Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
+
+```{r load data}
+#setwd('../')                                           # note: all of these relative file path calls work only for knitting
+
+# load data (pre-processed training set)
+train.data <- read.table('./data/Processed Data/data.txt')
+str(train.data)
+## row names are CpG sites, column names are sample names
+# transpose our data to have rows as observations, which is more convenient later on for building models
+train.data <- as.data.frame(t(train.data))
+
+# load metadata
+design <- read.csv("./data/Processed Data/des.txt", sep="\t", header=TRUE)
+str(design)
+
+row.names(train.data) == design$Samplename               # check that the samples are in same order
+design
+```
+
+Read in test data:
+```{r}
+# read pre-processed test data
+test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- as.data.frame(t(test.data))   #transpose data
+```
+
+```{r filter training data to contain the same CpGs as the test}
+# this isn't necessary if the test data didn't have CpGs removed (as a result of QC/preprocessing)
+train.data <- train.data[,colnames(train.data) %in% colnames(test.data)]
+```
+
+## Prefiltering cpgs 
+The goal of this prefiltering section is to reduce computational time without compromising detecting interesting features.
+
+```{r prefiltering based on SD}
+train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd) #caculate SD for each feature
+sd(train.sd)
+hist(train.sd)                    # histogram
+abline(v = mean(train.sd)) 
+
+# filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
+train.gsd <- subset(train.sd, train.sd > 0.10)
+hist(train.gsd)
+
+train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
+```
+
+#### We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
+# Step 2: Supervised classification:
+
+
+## logistic regression with elastic net regularization
+```{r rename}
+#renamed just so that I can copy Amrit's code
+x.train <- train.data.gsd
+y.train <- design$Ethnicity 
+```
+
+```{r subset data for faster run time, eval = FALSE, include = FALSE}
+# This subsetting is for testing code out without computational delay
+# since the data is very large (~450k rows), I will subset the data first to be able to play around with the code quickly.
+x.train <- train.data.gsd[,1:1000] #takes the first 1000 columns (cpgs)
+```
+
+```{r Specify resampling method}
+k = 5
+M = 3
+
+fitControl <- trainControl(method = "repeatedcv", 
+													 number = k,                 # Number of folds
+													 repeats = M,
+													 ## Estimate class probabilities
+													 classProbs = TRUE,
+                           ## Evaluate performance using 
+                           ## the following function
+                           summaryFunction = twoClassSummary,
+													 allowParallel = TRUE
+													 )  
+
+netGrid <- expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+```
+
+
+```{r tune glmnet parameters}
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
+ #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
+
+system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
+								y = y.train,                  
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								metric = 'ROC')                        # ROC because distribution is slightly skewed
+)
+
+netFit
+#saveRDS(netFit, './Data/Processed Data/netFit_alpha75_lambda25.rds')
+```
+
+```{r extract features}
+predictorsNet <- predictors(netFit)
+length(predictorsNet)
+
+```
+Looks like our model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
+
+# Step 3: Predict Ethnicity for Test Set
+
+```{r predict ethnicity for test set}
+x.test <- test.data[,colnames(test.data) %in% names(x.train)]
+#x.test <- test.data[,colnames(test.data)%in% predictors(netFit)]
+
+y.predict <- predict(netFit,  x.test, type = 'prob'$Ethnicity == make.names(levels(design$Ethnicity))
+```
+
+Use hierarchical clustering to visualize the cluster 
+
+
+
+
+
+```{r tune glmnet parameters 10 by 10, eval = FALSE, include = FALSE}
+netGrid100 <-  expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
+ #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
+
+system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
+								y = y.train,                  
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								metric = 'ROC')                        # ROC because distribution is slightly skewed
+)
+
+netFit
