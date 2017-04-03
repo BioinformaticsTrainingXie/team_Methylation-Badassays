@@ -41,7 +41,7 @@ Read in pre-processed data:
 #setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
-train.data <- read.table('./data/Processed Data/data.txt')
+train.data <- read.table('../../data/Processed Data/data.txt')
 str(train.data)
 ## row names are CpG sites, column names are sample names
 # transpose our data to have rows as observations, which is more convenient later on for building models
@@ -49,7 +49,7 @@ train.data <- as.data.frame(t(train.data))
 
 
 # load metadata
-design <- read.csv("./data/Processed Data/des.txt", sep="\t", header=TRUE)
+design <- read.csv("../../data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
 row.names(train.data) == design$Samplename               # check that the samples are in same order
@@ -58,15 +58,28 @@ row.names(train.data) == design$Samplename               # check that the sample
 Read in test data:
 ```{r}
 # read pre-processed test data
-test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- read.table("../../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))
+sum(is.na(test.data)) # 52000 total entries that are NA
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
 ```
 
 ```{r filter training data to contain the same CpGs as the test}
-train.data <- train.data[,colnames(train.data) %in% colnames(test.data)]
+train.data <- train.data[,colnames(train.data) %in% colnames(test.rmna)]
+dim(train.data)
 ```
 
+We only keep CpG sites in training set that: 
+
+* are also present in the test set
+
+* does not have missing values in the test set
+
+Which leaves `r dim(train.data)[2]` present in training set.
+
 ## Prefiltering cpgs 
+
+It takes way too long to include all 400k sites when fitting elastic net logistic regression and SVM, so we will only inlcude sites with a large variance. We decided on a standard deviation threshold of 0.1.
 
 ```{r prefiltering based on SD}
 train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd)
@@ -222,18 +235,6 @@ netFit
 saveRDS(netFit, './Data/Processed Data/netFit_alpha55_lambda_077_51pred.rds')
 ```
 
-```{r svm}
-system.time(svmFit <- train(x = x.train,
-                            y = y.train,
-                            method = 'svmLinear',
-                            trcontrol = fitControl,
-                            preProcess = c('center', 'scale'),
-                            metric = 'ROC'
-                            ))
-svmFit
-
-```
-
 Cross validation with a fold of k = 5 (making each fold 9 samples large), was used to determine the optimal tuning parameters.
 
 Horvath et al. (2013) uses an 'elastic net generalized linear model' to build an across-tissue DNAm predictor on age. Since our data is the same type, we'll try glmnet.
@@ -342,33 +343,13 @@ text(x = 60, y = 40, labels =
 #Train and Tune the SVM
 svm.tune <- train(x = x.train,
                   y= y.train,
-                  method = "svmRadial",   # Radial kernel
-                  tuneLength = 9,					# 9 values of the cost function
+                  method = "svmLinear",   # linear kernel
                   preProc = c("center","scale"),  # Center and scale data
                   metric="ROC",
                   trControl=fitControl)
 svm.tune
 ```
 
-The tuneLength parameter is set to pick 9 arbitrary values for the C, the "cost" of the radial kernel. This parameter controls the complexity of the boundary between support vectors. The radial kernel also requires setting a smoothing parameter, sigma.
-
-```{r fine-tune parameters}
-# Use the expand.grid to specify the search space	
-grid <- expand.grid(sigma = c(.0001, .001, 0.0002),
-                    C = 2:8)
-
- 
-#Train and Tune the SVM
-svm.tune <- train(x=x.train,
-                    y= y.train,
-                    method = "svmRadial",
-                    preProc = c("center","scale"),
-                    metric="ROC",
-                    tuneGrid = grid,
-                    trControl=fitControl)
- 
-svm.tune
-```
 
 ```{r Estimate test error by nested cv}
 # this is adapted from Amrit's code from lec 19
@@ -376,38 +357,33 @@ svm.tune
 set.seed(2018)
 
 # list of lists containing fold ids
-folds <- lapply(1:M, function(i) createFolds(y.train, k = k))
+folds <- createFolds(y.train, k = k)
 
-system.time(svmTesterror <- lapply(folds, function(i){
-  lapply(i, function(j){
+system.time(svmTesterror <- lapply(folds, function(j){
     # tune parameters with CV
-    set.seed(2019)
-    fitControl <- trainControl(method = "repeatedcv", 
+    fitControl <- trainControl(method = "cv", 
 													 number = k,                 
-													 repeats = M,
 													 classProbs = TRUE,
                            summaryFunction = twoClassSummary,
 													 savePredictions = TRUE, allowParallel = T)
     
     
     # build SVM classifier
-svm.fit <- train(x=x.train[-j,],
-                    y= y.train[-j],
-                    method = "svmRadial",
-                    preProc = c("center","scale"),
-                 tuneLength = 9,
-                    metric="ROC",
-                    trControl=fitControl)
+    svm.fit <- train(x=x.train[-j,],
+                        y= y.train[-j],
+                        method = "svmLinear",
+                        preProc = c("center","scale"),
+                        metric="ROC",
+                        trControl=fitControl)
     
     # Estimate probabilities of test predictions
     probTest <- predict(svmFit, x.train[j,], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
 
-  })
 })
 )
-svmTesterror
+#svmTesterror
 ```
 
 ```{r Performance}
@@ -430,7 +406,7 @@ Performance
 
 plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
      type = 'l', col = 1, xlab = '100 - sensitivity',
-     ylab = 'Sensitivity', main = 'Enet')
+     ylab = 'Sensitivity', main = 'Linear Kernel SVM')
 for(i in length(folds)){
   points(Performance['tpr',][[i]] ~ Performance['fpr',][[i]],
          type = 'l', col = 2)
@@ -447,11 +423,10 @@ text(x = 60, y = 40, labels =
 Use hierarchical clustering to visualize the cluster 
 ```{r predict ethnicity for test set}
 x.test <- t(test.data)
-x.test[1:6,1:6]
 
 predictors(netFit) %in% rownames(test.data)
 
-x.test <- x.test[,colnames(t(test.data))%in% predictors(netFit)]
+x.test <- x.test[,colnames(t(test.data))%in% colnames(train.gsd)]
 sum(is.na(x.test))
 
 select(x.test, contains(NA))
