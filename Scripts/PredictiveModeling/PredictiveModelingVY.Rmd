@@ -42,15 +42,22 @@ row.names(train.data) == design$Samplename               # check that the sample
 ```
 
 Read in test data:
-```{r}
+```{r read test}
 # read pre-processed test data
 test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
 ```
 
+We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor
+```{r remove NAs}
+#remove sites with NAs
+sum(is.na(test.data)) # 52000 total entries that are NA
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+```
+
 ```{r filter training data to contain the same CpGs as the test}
 # this isn't necessary if the test data didn't have CpGs removed (as a result of QC/preprocessing)
-train.data <- train.data[,colnames(train.data) %in% colnames(test.data)]
+train.data <- train.data[,colnames(train.data) %in% colnames(test.rmna)]
 ```
 
 ## Prefiltering cpgs 
@@ -122,7 +129,7 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
-saveRDS(netFit, './Data/Processed Data/netFit_alpha75_lambda077.rds')
+saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
 ```
 
 ```{r extract features}
@@ -132,8 +139,9 @@ length(predictorsNet)
 Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
 ## 2.2 SVM linear
+This section is for building the model using SVM. However, because computational time is long, this section is can be excluded if chosen (specify eval = false)
 
-```{r svm linear}
+```{r svm linear, eval = FALSE, include = FALSE}
 svmControl <- trainControl(method="repeatedcv",   
                            number = 5,
                            repeats=3,		    
@@ -158,6 +166,7 @@ x.test <- test.data[,colnames(test.data) %in% names(x.train)]
 
 y.predictNet <- predict(netFit,  x.test, type = 'prob')
 y.predictNet
+saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
 ## 3.2 SVM 
 
@@ -168,6 +177,16 @@ y.predictSVM
 ```
 
 
+# 4.0 Hierarchical Clustering
+```{r Clutsering}
+# Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
+hclust <- hclust(dist(x.test, method = 'euclidean'))
+
+library(sparcl) # for coloring dendrogram
+# colors the leaves of a dendrogram
+y = cutree(hclust, 2)
+ColorDendrogram(hclust, y=y, labels = names(y), branchlength = 2)
+```
 Use hierarchical clustering to visualize the cluster 
 
 ### This section is to tune parameters across 100 different combinations of alpha and lambda
