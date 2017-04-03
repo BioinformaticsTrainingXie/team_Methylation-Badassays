@@ -42,15 +42,22 @@ row.names(train.data) == design$Samplename               # check that the sample
 ```
 
 Read in test data:
-```{r}
+```{r read test}
 # read pre-processed test data
 test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
 ```
 
+We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor
+```{r remove NAs}
+#remove sites with NAs
+sum(is.na(test.data)) # 52000 total entries that are NA
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+```
+
 ```{r filter training data to contain the same CpGs as the test}
 # this isn't necessary if the test data didn't have CpGs removed (as a result of QC/preprocessing)
-train.data <- train.data[,colnames(train.data) %in% colnames(test.data)]
+train.data <- train.data[,colnames(train.data) %in% colnames(test.rmna)]
 ```
 
 ## Prefiltering cpgs 
@@ -102,7 +109,7 @@ fitControl <- trainControl(method = "repeatedcv",
 													 )  
 
 netGrid <- expand.grid(alpha = c(0.75),
-                           lambda = c(0.077))
+                           lambda = c(0.077, 0.25))
 ```
 
 
@@ -122,18 +129,20 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
-saveRDS(netFit, './Data/Processed Data/netFit_alpha75_lambda077.rds')
+#saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
 ```
 
 ```{r extract features}
 predictorsNet <- predictors(netFit)
 length(predictorsNet)
+#write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
 ```
 Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
 ## 2.2 SVM linear
+This section is for building the model using SVM. However, because computational time is long, this section is can be excluded if chosen (specify eval = false)
 
-```{r svm linear}
+```{r svm linear, eval = FALSE, include = FALSE}
 svmControl <- trainControl(method="repeatedcv",   
                            number = 5,
                            repeats=3,		    
@@ -153,22 +162,73 @@ svmFit
 
 ## 3.1 glmnet
 ```{r predict ethnicity for test set}
+#subset x.test down to the sites used for training (after prefilter)
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
-#x.test <- test.data[,colnames(test.data)%in% predictors(netFit)]
 
-y.predictNet <- predict(netFit,  x.test, type = 'prob')
+y.predictNet <- predict(netFit,  x.test)
 y.predictNet
+#saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
 ## 3.2 SVM 
 
 ```{r SVM predict on test, eval = FALSE}
-y.predictSVM <- predict(svmFit,  x.test, type = 'prob')
+y.predictSVM <- predict(svmFit,  x.test)
 #throws a warning
 y.predictSVM
 ```
 
 
-Use hierarchical clustering to visualize the cluster 
+# 4.0 Analysis of Predictors
+Here we pull out the CpG sites and look at them more closely. First we will see if clustering with only the predictors separates asians and caucasians
+## 4.1 Clustering
+```{r load package}
+library(ggdendro)
+```
+
+```{r clustering train based on predictors}
+#without all CpGs used to train
+hclust <- hclust(dist(x.train, method = 'euclidean'))
+
+#swap labels with ethnicity
+swaplabels <- function(hclust, des){     # des is a design matrix containing 'Samplename' and 'Ethnicity' col
+  labels <- data.frame(labels(hclust))   # pulls out current labels (samplename)
+  colnames(labels) <- 'Samplename'
+  labels <- labels %>% left_join(select(des, Samplename, Ethnicity), by = 'Samplename')
+  labels(hclust) <- labels(hclust) <- as.character(labels$Ethnicity)
+  return(hclust)
+}
+
+hclust <- swaplabels(hclust, design)
+y1 = cutree(hclust, 3)
+ColorDendrogram(hclust, y = y1, labels = names(y1), branchlength = 1.0, main = 'Clustering train on all CpGs')
+
+#with predictors only
+x.train.predictors <- x.train[,colnames(x.train) %in% predictorsNet]
+hclust2 <- hclust(dist(x.train.predictors, method = 'euclidean'))
+hclust2 <- swaplabels(hclust2, design)          #swap labels with ethnicity
+y2 = cutree(hclust2, 2)
+ColorDendrogram(hclust2, y = y2, labels = names(y2), branchlength = 0.3, main = 'Clustering train with predictors only')
+```
+
+```{r Clustering test data}
+# Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
+hclust3 <- hclust(dist(x.test, method = 'euclidean'))
+y3 = cutree(hclust3, 2)
+ColorDendrogram(hclust3, y=y3, labels = names(y3), branchlength = 2, main = 'Clustering Test with all CpGs')
+
+# clustering only with the predictors
+x.test.predictors <- x.test[,colnames(x.test) %in% predictorsNet]
+hclust4 <- hclust(dist(x.test.predictors, method = 'euclidean'))
+labels(hclust4) <- ''
+y4 = cutree(hclust4, 1)
+ColorDendrogram(hclust4, y=y4, labels = names(y4), branchlength = 0.25, main = 'Clustering Test with predictors only')
+```
+
+## 4.2 Plot CpG Predictors
+```{r plot top 35}
+glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
+plot(glmImp, top = 11)
+```
 
 ### This section is to tune parameters across 100 different combinations of alpha and lambda
 
@@ -192,7 +252,7 @@ system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, feat
 
 ```
 
-```{r examine CV}
+```{r examine CV, eval = FALSE}
 trellis.par.set(caretTheme())
 ggplot(netFit100)
 #heatmap of results
