@@ -144,6 +144,7 @@ ggplot(PC123, aes(x = PC2, y = PC3)) +
   geom_point(aes(color = Ethnicity)) +
   ggtitle('PC2 and PC3: Ethnicity')
 ```
+
 We can see from plotting the first three principal components that our groups (Asian, Caucasian) do not seem to separate. This indicates that the main drivers of the variance in the data is something else.
 
 ```{r Plot other metadata}
@@ -159,12 +160,14 @@ ggplot(PC123, aes(x = PC1, y = PC2)) +
   geom_point(aes(color = Sample_Group)) +
   ggtitle('Sample Group')
 ```
+
 It's not clear that our other variables are driving the variance in the data (sex, gestational age, and sample group).
 
 ```{r Scatter plot matrix first 5 PCs}
 # scatter plot matrix for the first 5 PCs
 splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
 ```
+
 Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
 
 ## PCA projection of loadings to test data:
@@ -182,6 +185,7 @@ predict(pc.train, new.data = test.data)
 
 
 ## logistic regression with elastic net regularization
+
 ```{r rename}
 #renamed just so that I can copy Amrit's code
 
@@ -339,15 +343,25 @@ text(x = 60, y = 40, labels =
 
 ## Support Vector Machine
 
-```{r tune parameters}
-#Train and Tune the SVM
-svm.tune <- train(x = x.train,
-                  y= y.train,
-                  method = "svmLinear",   # linear kernel
-                  preProc = c("center","scale"),  # Center and scale data
-                  metric="ROC",
-                  trControl=fitControl)
-svm.tune
+```{r train svm}
+# Linear kernel SVM with CV
+    fitControl <- trainControl(method = "cv", 
+													 number = k,                 
+													 classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE,
+													 allowParallel = T)
+    
+    
+    # build SVM classifier
+    svm.fit <- train(x=x.train,
+                        y= y.train,
+                        method = "svmLinear",
+                        preProc = c("center","scale"),
+                        metric="ROC",
+                        trControl=fitControl)
+
+    svm.fit
 ```
 
 
@@ -369,7 +383,7 @@ system.time(svmTesterror <- lapply(folds, function(j){
     
     
     # build SVM classifier
-    svm.fit <- train(x=x.train[-j,],
+    svmFit <- train(x=x.train[-j,],
                         y= y.train[-j],
                         method = "svmLinear",
                         preProc = c("center","scale"),
