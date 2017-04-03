@@ -225,21 +225,11 @@ splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
 
 Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
 
+###PCA projection of loadings to test data:
 
-Getting functional analysis for important CpG sites.
+We can use the predict function if we observe new data and want to predict their PCs values.
 
 ```{r}
-
-#write.csv(x = data, file = "data.csv")
-
-#test <- as.data.frame.DataTable(c("cg06903451", "cg09843049", "cg09843049"))
-
-#write.table(x = test, file = "test.csv")
-
-#beta.file <- "data.txt"
-#project.folder <- getwd()
-#project.name <- "test"
-
-#source("COHCAPmodify.R")
-#beta.table <- COHCAPmodify(beta.file, project.name, project.folder, platform="450k-HMM", output.format = "xls")
+# predict PCs for test set by projecting PC loadings to test data
+predict(pc.train, new.data = test.data)
 ```
