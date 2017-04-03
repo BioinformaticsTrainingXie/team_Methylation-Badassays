@@ -109,7 +109,7 @@ fitControl <- trainControl(method = "repeatedcv",
 													 )  
 
 netGrid <- expand.grid(alpha = c(0.75),
-                           lambda = c(0.077))
+                           lambda = c(0.077, 0.25))
 ```
 
 
@@ -129,12 +129,13 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
-saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
+#saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
 ```
 
 ```{r extract features}
 predictorsNet <- predictors(netFit)
 length(predictorsNet)
+write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
 ```
 Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
 
@@ -161,24 +162,27 @@ svmFit
 
 ## 3.1 glmnet
 ```{r predict ethnicity for test set}
+#subset x.test down to the sites used for training (after prefilter)
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
-#x.test <- test.data[,colnames(test.data)%in% predictors(netFit)]
 
-y.predictNet <- predict(netFit,  x.test, type = 'prob')
+y.predictNet <- predict(netFit,  x.test)
 y.predictNet
 saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
 ## 3.2 SVM 
 
 ```{r SVM predict on test, eval = FALSE}
-y.predictSVM <- predict(svmFit,  x.test, type = 'prob')
+y.predictSVM <- predict(svmFit,  x.test)
 #throws a warning
 y.predictSVM
 ```
 
 
-# 4.0 Hierarchical Clustering
-```{r Clutsering}
+# 4.0 Analysis of Predictors
+
+## 4.1 Clustering
+
+```{r Clustering test data}
 # Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 hclust <- hclust(dist(x.test, method = 'euclidean'))
 
@@ -187,7 +191,17 @@ library(sparcl) # for coloring dendrogram
 y = cutree(hclust, 2)
 ColorDendrogram(hclust, y=y, labels = names(y), branchlength = 2)
 ```
-Use hierarchical clustering to visualize the cluster 
+
+```{r clustering train based on predictors}
+x.train.predictors <- x.train[,colnames(x.train) %in% predictorsNet]
+x.train.predictors
+x.train[,]
+```
+##
+```{r plot top 35}
+glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
+plot(glmImp, top = 51)
+```
 
 ### This section is to tune parameters across 100 different combinations of alpha and lambda
 
@@ -211,7 +225,7 @@ system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, feat
 
 ```
 
-```{r examine CV}
+```{r examine CV, eval = FALSE}
 trellis.par.set(caretTheme())
 ggplot(netFit100)
 #heatmap of results
