@@ -12,4 +12,4 @@ This folder contains metadata, raw data, and processed data.
 
 * [Processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data) this folder contains the processed data processed from raw data.
 
-* Information about dataset 2 can be found in this [link](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8).
+* Information about dataset 2 can be found in this [link](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), and can be downloaded [here](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE69502).
