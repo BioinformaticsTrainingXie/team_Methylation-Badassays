@@ -1,6 +1,6 @@
 Exploratory Analysis of Processed Data
 ================
-Nivretta
+Nivretta, Ming
 
 Step 0: Load Packages and Data
 ==============================
@@ -59,13 +59,14 @@ full <- cbind(design, t(data))
 
 ``` r
 #random cpg site from 1 to 464923
-probe_row <- 2000
+probe_row <- 6000
 
 #get the site name 
 probe_name <- colnames(full)[probe_row]
 
+
 #plot y = beta values for random cpg site for all samples, x= gestational age, plots divided by sample group, points colored by ethnicity
-ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) + 
+ggplot(full, aes(x = as.factor(ga), y = full[probe_name], colour = Ethnicity)) + 
   #geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
   geom_jitter(width = 0.5) + 
   facet_wrap(~Sample_Group) + 
@@ -81,11 +82,11 @@ ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) +
 ``` r
   #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 
-#beta values for random cpG site, box plots of ethnicity
-ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
-  geom_boxplot(aes(fill=Ethnicity), show.legend = FALSE) + 
-  geom_jitter(width = 0.3) + 
-  facet_wrap(~sex) + 
+#beta values for random cpG site
+ggplot(full, aes(x = Ethnicity, y = full[probe_name])) + 
+  geom_violin(show.legend = FALSE) + 
+  geom_jitter(width = 0.3, aes(colour = sex)) + 
+  #facet_wrap(~sex) + 
   xlab("Ethnicity") + 
   ylab("Beta values") +
   ggtitle(paste("Beta values for CpG site", probe_name)) +
@@ -109,21 +110,37 @@ gsetFin2_ethnicity <- data[, order_ethnicity]
 #set the color pallette for heatmap
 cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
 
+col <- c(rep("darkgoldenrod1", times = ncol(gsetFin2_ethnicity)))
+col[grepl("Asian", full_ethnicity$Ethnicity)] <- "forestgreen"
+op <- par(mai = rep(0.5, 4))
 heatmap.2(cor(gsetFin2_ethnicity), 
-          Rowv=NA, 
-          Colv=NA, 
+          Rowv=FALSE, 
+          Colv=FALSE, 
           dendrogram = "none",
+          symm = TRUE,
           trace="none",
-          col=cols, 
-          margins = c(8,8),
-          #labRow = c(full_time$labels),
-          #labCol = c(full_time$labels),
-          key.title = NA)
-title("Sample Correlations, 
-      Ordered by Ethnicity then sample group")
+          col = cols, 
+          margins = c(1,1),
+          RowSideColors = col,
+          ColSideColors = col,
+          labRow = FALSE,
+          labCol = FALSE,
+          key.title = NA,
+          main = "Sample Correlations, 
+        Ordered by Ethnicity then sample group")
+legend("bottomleft", c("Caucasian", "Asian"), col = c("darkgoldenrod1", "forestgreen"), 
+    pch = 15)
 ```
 
 ![](Exploratory_files/figure-markdown_github/Sample%20to%20Sample%20Correlations-1.png)
+
+``` r
+par(op)
+```
+
+Sample group (Control, LOPET, IUGR) does not seem to affect the clustering of the samples. This fits with what it is known in the literature (control, LOPET, IUGR do not affect DNAm). Most of the samples seem to correlate evenly with each other.
+
+Now let's look at sample to sample correlation, ordered by ethnicity then gender.
 
 ``` r
 #obtain sample names in order of ethnicity and then gender
@@ -136,21 +153,35 @@ gsetFin2_ethnicity_sex <- data[, order_ethnicity_sex]
 #set the color pallette for heatmap
 cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
 
+col <- c(rep("darkgoldenrod1", times = ncol(gsetFin2_ethnicity_sex)))
+col[grepl("Asian", full_ethnicity_sex$Ethnicity)] <- "forestgreen"
+op <- par(mai = rep(0.5, 4))
 heatmap.2(cor(gsetFin2_ethnicity_sex), 
-          Rowv=NA, 
-          Colv=NA, 
+           Rowv=FALSE, 
+          Colv=FALSE, 
           dendrogram = "none",
+          symm = TRUE,
           trace="none",
-          col=cols, 
-          margins = c(8,8),
-          #labRow = c(full_time$labels),
-          #labCol = c(full_time$labels),
-          key.title = NA)
-title("Sample Correlations, 
-      Ordered by Ethnicity then Sex")
+          col = cols, 
+          margins = c(1,1),
+          RowSideColors = col,
+          ColSideColors = col,
+          labRow = FALSE,
+          labCol = FALSE,
+          key.title = NA,
+          main = "Sample Correlations, 
+        Ordered by Ethnicity then Gender")
+legend("bottomleft", c("Caucasian", "Asian"), col = c("darkgoldenrod1", "forestgreen"), 
+    pch = 15)
 ```
 
 ![](Exploratory_files/figure-markdown_github/Sample%20to%20Sample%20Correlations2-1.png)
+
+``` r
+par(op)
+```
+
+It's difficult to tell if gender affects affects the clustering of the samples. We need to look at the data further.
 
 Step 2: Unsupervised clustering
 ===============================
@@ -213,17 +244,6 @@ summary(pc.train)
 The `summary()` function describes the importance of the PCs. The first row describe again the standard deviation associated with each PC. The second row shows the proportion of the variance in the data explained by each component while the third row describe the cumulative proportion of explained variance.
 
 ``` r
-#Plot seems unncessary and vector labels not working, ok to remove?
-#g <- ggbiplot(pc.train, obs.scale = 1, var.scale = 1, 
-              #groups = design$Ethnicity, ellipse = TRUE, 
-              #circle = TRUE)
-#g <- g + scale_color_discrete(name = '')
-#g <- g + theme(legend.direction = 'horizontal', 
-               #legend.position = 'top')
-#print(g)
-
-
-
 PC123 <- data.frame(pc.train$x[,1:5])              # Take out first 3 PCs
 PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
                     left_join(design, 'Samplename')                         # Join the metadata info 
@@ -313,19 +333,38 @@ splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
 
 Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
 
-Getting functional analysis for important CpG sites.
+### PCA projection of loadings to test data:
+
+We can use the predict function if we observe new data and want to predict their PCs values.
 
 ``` r
-#write.csv(x = data, file = "data.csv")
+#download test data from dropbox
+#testdata.txt is in gitignore, be sure not to try to push to github
+#download.file("https://www.dropbox.com/s/gjmtofnktayl6m1/testdata.txt?dl=1", "testdata.txt")
 
-#test <- as.data.frame.DataTable(c("cg06903451", "cg09843049", "cg09843049"))
-
-#write.table(x = test, file = "test.csv")
-
-#beta.file <- "data.txt"
-#project.folder <- getwd()
-#project.name <- "test"
-
-#source("COHCAPmodify.R")
-#beta.table <- COHCAPmodify(beta.file, project.name, project.folder, platform="450k-HMM", output.format = "xls")
+#read in test data
+test.data <- read.table("testdata.txt", row.names = 1, header = T)
+test.data <- as.data.frame(t(test.data))
+sum(is.na(test.data)) # 52000 total entries that are NA
 ```
+
+    ## [1] 52000
+
+``` r
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+
+#predict PCs for test set by projecting PC loadings to test data
+predicted <- predict(pc.train, new.data = test.rmna)
+```
+
+    ## Warning: In predict.prcomp(pc.train, new.data = test.rmna) :
+    ##  extra argument 'new.data' will be disregarded
+
+``` r
+str(predicted)
+```
+
+    ##  num [1:45, 1:45] -310.8 -19.5 215.7 -43.5 -197.2 ...
+    ##  - attr(*, "dimnames")=List of 2
+    ##   ..$ : chr [1:45] "PM104" "PM112" "PM114" "PM115" ...
+    ##   ..$ : chr [1:45] "PC1" "PC2" "PC3" "PC4" ...
