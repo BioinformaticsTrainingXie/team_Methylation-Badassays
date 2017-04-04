@@ -1,10 +1,15 @@
 ---
 title: "ModelBuilding"
-author: "Victor"
+author: "Victor, Ming"
 date: "April 2, 2017"
-output: html_document
+output: 
+  github_document:
+    toc: TRUE
+    toc_depth: 2
 ---
-```{r load packages}
+# S0 Set up workspace
+## Load packages
+```{r load packages, message=FALSE}
 #source("https://bioconductor.org/biocLite.R")
 #biocLite('e1071')                                    # required for glmnet in caret
 #biocLite('pROC')
@@ -16,26 +21,29 @@ library(dplyr)
 library(parallel)
 library(doParallel)
 ```
+## Parallel processing
+Set up parallel processing to speed up trian()
+Make sure to specify in trainControl()
 
-```{r parallel processing}
+```{r parallel processing, message=FALSE}
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 ```
-
+## Load data
 Read in pre-processed data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r load data}
-#setwd('../')                                           # note: all of these relative file path calls work only for knitting
+setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
-train.data <- read.table('./data/Processed Data/data.txt')
+train.data <- read.table('../data/Processed Data/data.txt')
 str(train.data)                                   ## row names are CpG sites, column names are sample names
 # transpose our data to have rows as observations, which is more convenient later on for building models
 train.data <- as.data.frame(t(train.data))
 
 # load metadata
-design <- read.csv("./data/Processed Data/des.txt", sep="\t", header=TRUE)
+design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(design)
 
 row.names(train.data) == design$Samplename               # check that the samples are in same order
@@ -43,10 +51,17 @@ row.names(train.data) == design$Samplename               # check that the sample
 
 Read in test data:
 ```{r read test}
+setwd('../') # for knitting
 # read pre-processed test data
-test.data <- read.table("./Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
 ```
+
+# S1 Prefiltering Features
+
+Reducing the number of features can significantly reduce computational time, which is desirable when the dataset is large. However, we must be careful not remove potentially 'interesting' features that have a high chance of being useful in building a classifier.
+
+## 1.1 Remove NAs
 
 We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor
 ```{r remove NAs}
@@ -54,13 +69,15 @@ We should remove any sites with NAs in them or else predictions cannot be genera
 sum(is.na(test.data)) # 52000 total entries that are NA
 test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
 ```
+## 1.2 Reduce CpGs to match test and train
+Some CpGs were removed in the Test dataset from preprocessing and QC. These need to be removed, or errors might occur when trying to predict.
 
 ```{r filter training data to contain the same CpGs as the test}
 # this isn't necessary if the test data didn't have CpGs removed (as a result of QC/preprocessing)
 train.data <- train.data[,colnames(train.data) %in% colnames(test.rmna)]
 ```
 
-## Prefiltering cpgs 
+## 1.3 Prefiltering cpgs (most variable) 
 The goal of this prefiltering section is to reduce computational time without compromising detecting interesting features.
 
 ```{r prefiltering based on SD}
@@ -76,10 +93,9 @@ hist(train.gsd)
 train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
-#### We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
-# Step 2: Supervised classification:
-
-
+We reduced the # of features to 'r ncol(train.data.gsd) to reduce computation time. train.data.gsd is the working dataset
+# S2 Supervised classification:
+We decided to try two different models for building our classifer: elastic net logistic regression (glmnet) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
 ## 2.1 logistic regression with elastic net regularization
 ```{r rename}
 #renamed just so that I can copy Amrit's code
@@ -111,7 +127,7 @@ fitControl <- trainControl(method = "repeatedcv",
 netGrid <- expand.grid(alpha = c(0.75),
                            lambda = c(0.077, 0.25))
 ```
-
+We specify the model to be built using repeated cross validation with a fold = 5, and repeats = 3. We tune the model holding alpha constant (alpha = 0.75), keeping alpha high to favour L1 norm to achieve a small panel of biomarkers. Lambda, the magnitude of the penalty, is tested at 0.077, and 0.25.
 
 ```{r tune glmnet parameters}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
@@ -137,12 +153,12 @@ predictorsNet <- predictors(netFit)
 length(predictorsNet)
 #write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
 ```
-Looks like our glmnet-built model has chosen 'r length(predictors)' CpGs that can be used to predict ethnicity.
+Looks like our glmnet-built model has chosen 'r length(predictorsNet)' CpGs that can be used to predict ethnicity.
 
 ## 2.2 SVM linear
-This section is for building the model using SVM. However, because computational time is long, this section is can be excluded if chosen (specify eval = false)
+This section is for building the model using SVM. However, because computational time is long, this section is can be excluded when ran, since we have chosen the glmnet model to be our final model.
 
-```{r svm linear, eval = FALSE, include = FALSE}
+```{r svm linear, eval = TRUE}
 svmControl <- trainControl(method="repeatedcv",   
                            number = 5,
                            repeats=3,		    
@@ -158,34 +174,48 @@ system.time(svmFit <- train(x=x.train,
                             trControl= svmControl)	)
 svmFit
 ```
-# Step 3: Predict Ethnicity for Test Set
+# S3 Predict Ethnicity for external data Set
+Next, we use the model we built and run it on an external data set, where there is no ethnicity information.
 
 ## 3.1 glmnet
 ```{r predict ethnicity for test set}
 #subset x.test down to the sites used for training (after prefilter)
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
 
+#class predictions
 y.predictNet <- predict(netFit,  x.test)
 y.predictNet
+
+#class probabilities
+y.predictNetProb <- predict(netFit, x.test, type = 'prob')
+y.predictNetProb
+
 #saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
-## 3.2 SVM 
+It looks like our model classifies the entire external dataset is Caucasian. This is suspicious, as we believe the samples to come from a relatively heterogenous population. However, due to time constraints, we decided to move ahead and perform downstream analysis. If there was more time, we might think about where we can change our model tuning process to produce more sensible results. 
 
+#### Some explanations for this result:
+- It's possible that the data set is truly all Caucasian.
+- The dataset is too 'different' to have the classifier ran on. (too much noise)
+- The self-reported ethnicities in the training data is too unreliable
+
+## 3.2 SVM 
 ```{r SVM predict on test, eval = FALSE}
 y.predictSVM <- predict(svmFit,  x.test)
 #throws a warning
 y.predictSVM
 ```
 
-
-# 4.0 Analysis of Predictors
+# S4 Analysis of Predictors
 Here we pull out the CpG sites and look at them more closely. First we will see if clustering with only the predictors separates asians and caucasians
 ## 4.1 Clustering
-```{r load package}
+```{r load package, message = FALSE}
 library(ggdendro)
+library(sparcl) # ColorDendrogram
+library(dendextend)
 ```
 
-```{r clustering train based on predictors}
+```{r clustering train based on predictors, warning = FALSE}
 #without all CpGs used to train
 hclust <- hclust(dist(x.train, method = 'euclidean'))
 
@@ -194,7 +224,7 @@ swaplabels <- function(hclust, des){     # des is a design matrix containing 'Sa
   labels <- data.frame(labels(hclust))   # pulls out current labels (samplename)
   colnames(labels) <- 'Samplename'
   labels <- labels %>% left_join(select(des, Samplename, Ethnicity), by = 'Samplename')
-  labels(hclust) <- labels(hclust) <- as.character(labels$Ethnicity)
+  labels(hclust) <- as.character(labels$Ethnicity)
   return(hclust)
 }
 
@@ -209,8 +239,8 @@ hclust2 <- swaplabels(hclust2, design)          #swap labels with ethnicity
 y2 = cutree(hclust2, 2)
 ColorDendrogram(hclust2, y = y2, labels = names(y2), branchlength = 0.3, main = 'Clustering train with predictors only')
 ```
-
-```{r Clustering test data}
+We see that clustering with the predictors extracted from our classifier, our training data clusters into two homogenous groups consisting of Asians and Caucasians. This might indicate overfitting, as there were 0 missclassifications.
+```{r Clustering test data, warning=FALSE}
 # Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 hclust3 <- hclust(dist(x.test, method = 'euclidean'))
 y3 = cutree(hclust3, 2)
@@ -219,29 +249,85 @@ ColorDendrogram(hclust3, y=y3, labels = names(y3), branchlength = 2, main = 'Clu
 # clustering only with the predictors
 x.test.predictors <- x.test[,colnames(x.test) %in% predictorsNet]
 hclust4 <- hclust(dist(x.test.predictors, method = 'euclidean'))
-labels(hclust4) <- ''
-y4 = cutree(hclust4, 1)
+y4 = cutree(hclust4, 2)
 ColorDendrogram(hclust4, y=y4, labels = names(y4), branchlength = 0.25, main = 'Clustering Test with predictors only')
 ```
+We can see that clustering the external data set (test) does not improve the separation of the test data into two main clusters, indicating that the classifier is not producing a heterogenous set of predictions.
+
+```{r cluster both test and train, warning = FALSE}
+# add samplename column to match on
+x.test.predictors <- x.test.predictors %>% 
+                        tibble::rownames_to_column('Samplename')
+x.train.predictors <- x.train.predictors %>%
+                        tibble::rownames_to_column('Samplename') 
+
+# replace sample name with true ethnicity info
+#x.train.predictors <- x.train.predictors %>% left_join(select(design, Samplename, Ethnicity), by = 'Samplename') 
+#x.train.predictors$Samplename <- x.train.predictors$Ethnicity 
+
+# combine train and test
+x.test.train.predictors <- full_join(x.train.predictors, x.test.predictors) %>%
+                            tibble::column_to_rownames('Samplename')
+# clustering
+hclust5 <- hclust(dist(x.test.train.predictors, method = 'euclidean'))
+labels5 <- data.frame(labels(hclust5))   # pulls out current labels (samplename)
+colnames(labels5) <- 'Samplename'
+labels5 <- labels5 %>% left_join(select(design, Samplename, Ethnicity), by = 'Samplename')
+#replace train samples with ethnicity labels
+#labels5$Samplename[!is.na(labels5$Ethnicity)] <- as.character(labels5$Ethnicity[!is.na(labels5$Ethnicity)])
+
+labels(hclust5) <- labels5$Samplename
+
+
+hclust5 <- swaplabels(hclust5, design)
+labels(hclust5)
+
+y5 = cutree(hclust5, 5)
+ColorDendrogram(hclust5, y = y5, labels = names(y5), branchlength = 0.3, main = 'Clustering train with predictors only')
+
+```
+When we perform hierarchical clustering with the entire train and test set, we can see that Caucasians and Asians mainly separate into the two largest clusters, with the majority of the test set (unlabeled branches) clustering closer to the Caucasians samples. 
 
 ## 4.2 Plot CpG Predictors
 ```{r plot top 35}
 glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp, top = 11)
+plot(glmImp, top = length(predictors(netFit)))
 ```
+Here we plot the 11 predictor CpGs against 'importance' which is calculated based on their relative t-statistic score.
+```{r plotting CpGs, warning = FALSE}
+# For training data set
+cpg1 <- x.train.predictors %>% select(Samplename, cg16329197) %>% 
+                                left_join(design, 'Samplename')
+ggplot(cpg1, aes(x=Ethnicity, y=cg16329197))+
+  geom_boxplot()+
+  ggtitle('Top CpG predictor methylation in Training data is differentially
+          methylated')+
+  ylab('cg16329197 methylation')
 
-### This section is to tune parameters across 100 different combinations of alpha and lambda
+# Pick 11th ranked CpG
+cpg2 <- x.train.predictors %>% select(Samplename, cg22853943) %>% 
+                                left_join(design, 'Samplename')
+ggplot(cpg2, aes(x=Ethnicity, y=cg22853943))+
+  geom_boxplot()+
+  ggtitle('11th ranked CpG predictor methylation in Training data is
+          differentially methylated')+
+  ylab('cg22853943 methylation')
+```
+We can see that the 1st and 11th ranked predictor CpG are both obviously differentially methylated in the training dataset between the asians and caucasians. This is a good sign that the model has chosen 'useful' CpG sites. However, perhaps these CpGs fit our training data too well.
 
-```{r tune glmnet parameters 10 by 10, eval = FALSE, include = FALSE}
-netGrid100 <-  expand.grid(alpha = c(0.20, 0.40, 0.60, 0.80, 1.00),
-                           lambda = c(0.05, 0.10, 0.15, 0.20, 0.25))
+# S5 Tune alpha and lambda 10 x 10 grid
 
-set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+This section is to tune parameters across 100 different combinations of alpha and lambda
 
-#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
- #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
+```{r tune glmnet parameters 10 by 10, eval = TRUE, include = TRUE}
+netGrid100 <-  expand.grid(alpha = c(0.10, 0.20, 0.30, 0.40, 0.50, 
+                                     0.60, 0.70, 0.80, 0.90, 1.00),
+                           lambda = c(0.025, 0.050, 0.075, 0.10, 0.15, 
+                                      0.20, 0.25, 0.30, 0.40, 0.50))
 
-system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, features need to be columns
+set.seed(2017)                              
+
+system.time(netFit100 <- train(x = x.train, 
 								y = y.train,                  
 								method = "glmnet",                     # glmnet model
 								trControl = fitControl,                # use fitControl to specify cross validation
@@ -249,16 +335,16 @@ system.time(netFit100 <- train(x = x.train,   # samples need to be in rows, feat
 								preProcess = c( "center", "scale"),    # Center and Scale the data
 								metric = 'ROC')                        # ROC because distribution is slightly skewed
 )
-
+netFit100
 ```
 
-```{r examine CV, eval = FALSE}
+```{r examine CV, eval = TRUE}
 trellis.par.set(caretTheme())
 ggplot(netFit100)
 #heatmap of results
 plot(netFit100, metric = "ROC", plotType = "level",
      scales = list(x = list(rot = 90)))
-length(predictors(netFit100))
 glmImp100 <- varImp(netFit100, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp100, top = 50)
+plot(glmImp100, top = length(predictors(netFit100)))
+length(predictors(netFit100))
 ```
