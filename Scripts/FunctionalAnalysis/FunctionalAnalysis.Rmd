@@ -1,25 +1,27 @@
 ---
-title: "FunctionalAnalysis"
+title: "Functional analysis of final list of predictors for glmnet"
 author: "Nivretta Thatra"
+data: "March 3, 2017"
 output: github_document
 ---
 
 #Step 0: Load Packages and Data
+
 Load required packages:
 
-
-```{r load packages}
-
-
+```{r load packages, results = "hide"}
 
 #getting cpg site functional info
-#source("https://bioconductor.org/biocLite.R")
+source("https://bioconductor.org/biocLite.R")
 #biocLite("COHCAP")
+#biocLite("GO.db")
+#biocLite("mygene")
 
-library("COHCAP")
+library(COHCAP)
 library(dplyr)
 library(tidyverse)
 library(plyr)
+library(mygene)
 
 ```
 
@@ -27,24 +29,63 @@ Load a set of CpG sites of interest
 
 ```{r}
 
-#I've saved a set of interesting "test" sites in testCpGsites.txt
-
-interestingSites <- read.table("testCpGsites.txt")
+interestingSites <- read.table("../../Data/Processed Data/predictorsGlmnet.txt")
 
 ```
 
-#Step 1: Annotation to chromosome, gene, and CpG Islands
+#Step 1: Annotation to chromosome, location, gene and CpG Islands
 
-The [COHCAP](https://www.bioconductor.org/packages/devel/bioc/manuals/COHCAP/man/COHCAP.pdf) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes.
+The [COHCAP](https://www.bioconductor.org/packages/devel/bioc/manuals/COHCAP/man/COHCAP.pdf) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes. Specifically, these annotations contain which chromosome, location, gene and CpG island each CpG site maps to.
 
 ```{r}
 
 colnames(interestingSites) <- c("SiteID")
 
 data(COHCAP.450k.HMM)
-    
+data(COHCAP.450k.UCSC)
 annotated <- join(interestingSites, COHCAP.450k.HMM)
-knitr::kable(head(annotated)) 
+annotatedUCSC <- join(interestingSites, COHCAP.450k.UCSC)
+
+knitr::kable(annotated) 
+
+knitr::kable(annotatedUCSC)
 
 ```
 
+##Summary:
+
+The 11 CpG sites are found on chromosomes 1, 2, 3, 12, 15 or 17. The only difference between the two annotations is the CpG islands to which they map.
+
+The CpG sites map to three genes: SH2D5, IVL and C3orf21. Now let's look at which GO terms the three identified genes map to.
+
+#Step 2: GO terms
+
+```{r GO Terms associated with Genes}
+
+c(data.matrix(annotated$Gene))
+
+querySH2D5 <- mygene::query("SH2D5", fields='go', species='human')$hits
+(SH2D5 <- lapply(querySH2D5, as.list))
+
+queryIVL <- mygene::query("IVL", fields='go', species='human')$hits
+(IVL <- lapply(queryIVL, as.list))
+
+queryC3orf21 <- mygene::query("C3orf21", fields='go', species='human')$hits
+(C3orf21 <- lapply(queryC3orf21, as.list))
+
+
+#queryMany, a function from the mygene package which allows many genes to be queried at once, does not seem to be working
+
+```
+
+##Summary:
+
+Gene SH2D5 is involved in postsynaptic density (presumably in neurons), cell junction, and the postsynaptic membrane.
+Gene IVL is involved in cornfication (hard layer of skin formation), peptide cross-linking, and other protein binding.
+Gene C3orf21 is a key component of ER membrane, is involved in enzyme transport, and in ion binding.
+
+#Notes:
+
+The easiest way to get all annotation information (gene, chromosome, GO ID, GO term, etc) would be to use the package `IlluminaHumanMethylation450k.db` - but I can't get it to download correctly. I get this error: "ERROR: loading failed * removing ‘/home/nivretta/R/x86_64-redhat-linux-gnu-library/3.3/IlluminaHumanMethylation450k.db’ The downloaded source packages are in ‘/tmp/RtmpK8whuD/downloaded_packages’ installation path not writeable, unable to update packages: cluster, lattice, Matrix, mgcv, nlme, survival Warning message: In install.packages(pkgs = doing, lib = lib, ...) : installation of package ‘IlluminaHumanMethylation450k.db’ had non-zero exit status".
+
+And this seems to be [a documented problem](https://support.bioconductor.org/p/62068/), so I gave up and moved on.
