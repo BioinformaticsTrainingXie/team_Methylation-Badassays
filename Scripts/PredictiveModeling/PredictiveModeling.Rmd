@@ -50,21 +50,33 @@ train.data <- as.data.frame(t(train.data))
 
 
 # load metadata
-design <- read.csv("../../data/Processed Data/des.txt", sep="\t", header=TRUE)
-str(design)
+train.design <- read.csv("../../data/Processed Data/des.txt", sep="\t", header=TRUE)
+str(train.design)
 
-row.names(train.data) == design$Samplename               # check that the samples are in same order
+row.names(train.data) == train.design$Samplename               # check that the samples are in same order
 ```
 
 Read in test data:
-```{r}
+```{r load test data}
 # read pre-processed test data
 test.data <- read.table("../../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))
 sum(is.na(test.data)) # 52000 total entries that are NA
 test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
-test.design <-  read_excel("~/R Directory/ming_wan/stat540/team_Methylation-Badassays/data/Processed Data/Test data/metadata.GA_illumina_methylation.xls", 
+
+test.design <-  read_excel("../../data/Processed Data/Test data/metadata.GA_illumina_methylation.xls", 
     sheet = "Metadata", skip = 28)
+str(test.design)
+## had to change one rowname in .xls file
+#rownames(test.design)[which(test.design$`Sample name` == "mt4-5_v")] <- "mt4.5_v"
+# subset columns we need and rename them
+test.design <- test.design[test.design$`Sample name` %in% rownames(test.data),]
+test.design <- test.design[,c(1,7,8,10)]
+colnames(test.design)[1] <- "Samplename"
+colnames(test.design)[3] <- "sex"
+colnames(test.design)[4] <- "ga"
+
+str(test.design)
 
 ```
 
@@ -122,7 +134,7 @@ The `summary()` function describes the importance of the PCs. The first row desc
 
 ```{r plot PCs}
 g <- ggbiplot(pc.train, obs.scale = 1, var.scale = 1, 
-              groups = design$Ethnicity, ellipse = TRUE, 
+              groups = train.design$Ethnicity, ellipse = TRUE, 
               circle = TRUE)
 g <- g + scale_color_discrete(name = '')
 g <- g + theme(legend.direction = 'horizontal', 
@@ -133,7 +145,7 @@ print(g)
 
 PC123 <- data.frame(pc.train$x[,1:5])              # Take out first 3 PCs
 PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
-                    left_join(design, 'Samplename')                         # Join the metadata info 
+                    left_join(train.design, 'Samplename')                         # Join the metadata info 
 head(PC123)            
 
 ggplot(PC123, aes(x = PC1, y = PC2)) + 
@@ -194,7 +206,8 @@ predict(pc.train, new.data = test.data)
 #renamed just so that I can copy Amrit's code
 
 x.train <- train.data.gsd
-y.train <- design$Ethnicity 
+#x.train <- train.data
+y.train <- train.design$Ethnicity 
 ```
 
 ```{r subset data for faster run time, eval = FALSE, include = FALSE}
@@ -203,6 +216,46 @@ y.train <- design$Ethnicity
 x.train <- train.data.gsd[,1:1000] #takes the first 1000 columns (cpgs)
 ```
 
+### try to identify sites significantly associated with ethnicity based on single marker testing
+We can use a linear model to identify differentially methylated probes with `limma`, as shown in this older 540 [seminar](http://www.ugrad.stat.ubc.ca/~stat540/seminars/seminar08_methylation.html).
+
+Create a design matrix.
+
+```{r design matrix}
+des.mat <- model.matrix(~Ethnicity, train.design)
+```
+
+Fit model to obtain top differentially methylated CpG sites.
+
+```{r fit linear model}
+
+DMRfit <- lmFit(as.data.frame(t(x.train)), des.mat)
+DMRfitEb <- eBayes(DMRfit)
+cutoff <- 0.1
+DMR <- topTable(DMRfitEb, coef = "EthnicityCaucasian", number = Inf, p.value = cutoff)
+library(knitr)
+
+knitr::kable(head(DMR))  # top hits 
+nrow(DMR)
+
+# subset only those with FDR < 0.1
+x.train <- train.data[,colnames(train.data)%in% rownames(DMR)]
+```
+
+So using a cutoff of FDR = 0.01, we identified 106 CpG sites that are differentially methylated between Caucasian and Asian genetic ancestry. Now we can make some plots to check these hits.
+
+
+### glmnet
+
+```{r}
+glmfit = glmnet(as.matrix(x.train), y.train, family = "binomial")
+plot(cv.glmnet(as.matrix(x.train), y.train,family = "binomial"))
+predict(glmfit, test.data[,colnames(test.data)%in% colnames(x.train)], type = "class")
+
+```
+
+
+### caret
 ```{r Specify resampling method}
 k = 5
 M = 3
@@ -221,14 +274,18 @@ fitControl <- trainControl(method = "repeatedcv",
 
 netGrid <- expand.grid(alpha = c(0.55, 0.75, 0.9),
                            lambda = c(0.077, 0.25))
+# netGrid <- expand.grid(alpha = (1:9)/10,
+#                           lambda = seq(0.05,0.5,length.out = 9))
+netGrid <- expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+# netGrid <- expand.grid(alpha = c(0.1),
+#                            lambda = c(0.5))
 ```
 
 
 ```{r tune glmnet parameters}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
 
-#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
- #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
 
 system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
@@ -240,6 +297,11 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
+length(predictors(netFit))
+
+probTest <- predict(netFit, x.train, type = 'prob')
+ethProb <- probTest[,'Asian']
+ethProb
 #saveRDS(netFit, './Data/Processed Data/netFit_alpha55_lambda_077_51pred.rds')
 ```
 
@@ -293,7 +355,8 @@ system.time(netTesterror <- lapply(folds, function(i){
 													 repeats = M,
 													 classProbs = TRUE,
                            summaryFunction = twoClassSummary,
-													 savePredictions = TRUE, allowParallel = T)
+													 savePredictions = TRUE,
+													 allowParallel = T)
     
     
     # build elastic net classifier
@@ -308,11 +371,12 @@ system.time(netTesterror <- lapply(folds, function(i){
     probTest <- predict(netFit, x.train[j,], type = 'prob')
     ethProb <- probTest[,'Asian']
     ethProb
-
   })
+
 })
 )
-netTesterror
+# netTesterror
+saveRDS(netTesterror,"netTesterror.rds")
 ```
 
 ```{r Performance}
@@ -445,29 +509,45 @@ x.test <- test.rmna
 predictors(netFit) %in% rownames(test.data)
 
 x.test <- x.test[, colnames(x.test) %in% colnames(train.data.gsd)]
+x.test <- x.test[, colnames(x.test) %in% rownames(DMR)]
 sum(is.na(x.test)) # there shouldn't be NAs present -- predict() function cannot predict if there are missing values
 
-select(x.test, contains(NA))
-y.predict <- predict(netFit,  x.test)
-svm.predict <- predict(svm.fit, x.test)
+y.predict <- predict(netFit,  x.test, type = "prob")
+y.predict[,"Asian"]
+netFit
+svm.predict <- predict(svm.fit, x.test, type = "prob")
 
 # Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
-distance <- dist(y.predict, method="euclidean") 
+distance <- dist(x.test, method="euclidean") 
 cluster <- hclust(distance, method="average")
-plot(cluster, hang=-1, label=y.predict)
-
+plot(cluster, hang=-1, label=y.predict[,"Asian"])
 ```
 
 # Step 4: Differentially Methylated Sites Between Test and Control
 
-Our classifier predicts that all test samples are Caucasians. This raises suspicion as we expected some ethnic diversity in our test set. We can look at the differentially methylated CpG sites between training and test set to see how much difference these two data sets have.
+Our classifier predicts that all test samples are Caucasians. This raises suspicion as we expected some ethnic diversity in our test set. Potential reasons for getting this result include:
+
+* these test samples just all happen to be Caucasiansl
+
+* too many predictors for elastic net to select, some features are significantly different by ethnicity in training data by chance but were still selected as predictors, which introduces overfitting;
+
+* the training set and test set are significantly differentially methylated.
+
+We can look at the differentially methylated CpG sites between training and test set to see how much difference these two data sets have.
 
 
 Which set of CpG sites should we conduct DMA on?
 
 1) all CpGs present in both data sets ( after removing sites with missing values in test);
 
-```{r}
+```{r merge all}
+merged.all <- rbind(train.data, test.data[, colnames(test.data) %in% colnames(train.data)])
+merged.design <- rbind(train.design[,c("Samplename","ga","sex")], test.design[,c("Samplename","ga","sex")])
+merged.design$Group = relevel(
+    factor(c(rep("Train",nrow(train.data)),rep("Test", nrow(test.data)))), 
+    ref = "Train")
+    row.names = rownames(merged.sd)
+DesMat <- model.matrix(~ Group + ga + sex, merged.design)
 
 ```
 
@@ -475,14 +555,11 @@ Which set of CpG sites should we conduct DMA on?
 2) only CpGs with s.d. > 0.1;
 
 
-```{r}
+```{r merged filtered}
+x.test <- test.rmna
+x.test <- x.test[, colnames(x.test) %in% colnames(train.data.gsd)]
+
 merged.sd <- rbind(x.train, x.test)
-merged.design <-
-  data.frame(Group = relevel(
-    factor(c(rep("Train",nrow(x.train)),rep("Test", nrow(x.test)))), 
-    ref = "Train"),
-    row.names = rownames(merged.sd))
-DesMat <- model.matrix(~ Group, merged.design)
 
 ```
 
@@ -490,32 +567,36 @@ DesMat <- model.matrix(~ Group, merged.design)
 3) only CpGs identified as predictors using elastic net;
 
 
-```{r}
-
+```{r merge predictors}
+merged.pred <- merged.sd[, colnames(merged.sd) %in% predictors(netFit)]
 ```
 
 ## Unsupervised Clustering PCA
 
-```{r}
-pc.merged <- prcomp(scale(merged.sd, cneter=T, scale = T))
+```{r merged PCA}
+pc.merged <- prcomp(scale(merged.all, center=T, scale = T))
 PC1to5 <- data.frame(pc.merged$x[,1:5])              # Take out first 5 PCs
 PC1to5 <- PC1to5 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
-                    left_join(design, 'Samplename')                         # Join the metadata info 
+                    left_join(merged.design, 'Samplename')                         # Join the metadata info 
 head(PC1to5)            
 
 # scatter plot matrix for the first 5 PCs
-splom(PC1to5[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
-
+splom(PC1to5[,c(2:6,9)], panel = panel.smoothScatter, raster = TRUE)
+# first PC is significantly different!
 ```
 
+The first PC differentiates training and test set, which means there are systematic differences between the two sets. We must discard the top PC first before predicting test set.
 
 ## Differential Methylation Analysis with Single Markers
 
-```{r}
-DMRfit <- lmFit(M.CGI, DesMat)
+### All Sites
+```{r merged.all DMA}
+DMRfit <- lmFit(as.data.frame(t(merged.all)), DesMat)
 DMRfitEb <- eBayes(DMRfit)
-cutoff <- 0.01
-DMR <- topTable(DMRfitEb, coef = 'GroupALL', number = Inf, p.value = cutoff)
+cutoff <- 0.05
+DMR <- topTable(DMRfitEb, coef = 'GroupTest', number = Inf, p.value = cutoff)
 head(DMR)
+nrow(DMR)
 ```
 
+A total of `nrow(DMR)` 
