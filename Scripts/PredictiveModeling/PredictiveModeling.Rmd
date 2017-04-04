@@ -574,18 +574,46 @@ merged.pred <- merged.sd[, colnames(merged.sd) %in% predictors(netFit)]
 ## Unsupervised Clustering PCA
 
 ```{r merged PCA}
-pc.merged <- prcomp(scale(merged.all, center=T, scale = T))
+pc.merged <- prcomp(merged.all, center=T, scale = T)
 PC1to5 <- data.frame(pc.merged$x[,1:5])              # Take out first 5 PCs
 PC1to5 <- PC1to5 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
                     left_join(merged.design, 'Samplename')                         # Join the metadata info 
 head(PC1to5)            
 
 # scatter plot matrix for the first 5 PCs
-splom(PC1to5[,c(2:6,9)], panel = panel.smoothScatter, raster = TRUE)
+png("merged_pca.png", width = 1000, height = 1000)
+splom(PC1to5[,c(2:6,9)], raster = TRUE)
 # first PC is significantly different!
+dev.off()
+# scree plot
+png("merged_pca_scree.png", width = 600, height = 600)
+plot(pc.merged, type = "l", main = "PCA Scree Plot for Merged Data")
+dev.off()
 ```
 
 The first PC differentiates training and test set, which means there are systematic differences between the two sets. We must discard the top PC first before predicting test set.
+
+```{r discard the first pc}
+
+Xhat<- pc.merged$x[,-1] %*% t(pc.merged$rotation[,-1])
+
+merged.trunc <- scale(Xhat, center = F, scale = 1/pc.merged$scale)
+merged.trunc <- scale(merged.trunc, center = -1 * pc.merged$center, scale = FALSE) # back-scale features to original center and scale
+
+str(merged.trunc)
+
+# verify PC truncation
+pc.trunc <- prcomp(merged.trunc, center=T, scale = T)
+
+PC1to5.trunc <- data.frame(pc.trunc$x[,1:5])              # Take out first 5 PCs
+PC1to5.trunc <- PC1to5.trunc %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
+                    left_join(merged.design, 'Samplename')                         # Join the metadata info 
+
+# scatter plot matrix for the first 5 PCs
+splom(PC1to5.trunc[,c(2:6,9)], raster = TRUE)
+
+```
+
 
 ## Differential Methylation Analysis with Single Markers
 
