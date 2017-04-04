@@ -68,6 +68,10 @@ DMR100 <- topTable(DMRfitEb, coef = "EthnicityCaucasian", number = 100)
 DMR.CpG <- t(as.matrix(subset(data, rownames(data) %in% rownames(DMR100))))
 str(DMR.CpG, max.level = 0)
 
+limma_top100_ethinicity <- list(rownames(DMR100))
+
+write_rds(list(rownames(DMR100)), path = "limma_top100_ethinicity")
+
 #plot heatmap
 ###LABELS WRONG AT THE MOMENT...
 #col <- c(rep("darkgoldenrod1", times = nrow(DMR.CpG)))
@@ -79,4 +83,5 @@ str(DMR.CpG, max.level = 0)
 #legend("topright", c("Caucasian", "Asian"), col = c("darkgoldenrod1", "forestgreen"), 
     #pch = 15)
 ```
+
 
