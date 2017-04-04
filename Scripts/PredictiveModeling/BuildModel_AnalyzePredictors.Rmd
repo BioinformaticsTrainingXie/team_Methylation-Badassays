@@ -93,7 +93,7 @@ hist(train.gsd)
 train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
-We reduced the # of features to 'r ncol(train.data.gsd) to reduce computation time. train.data.gsd is the working dataset
+We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
 # S2 Supervised classification:
 We decided to try two different models for building our classifer: elastic net logistic regression (glmnet) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
 ## 2.1 logistic regression with elastic net regularization
