@@ -27,6 +27,7 @@ library(ggbiplot)
 library(parallel)
 library(foreach)
 library(doParallel)
+library(readxl)
 ```
 
 ```{r create multiple processes}
@@ -34,7 +35,7 @@ cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 ```
 
-Read in pre-processed data:
+Read in pre-processed training data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r load data}
@@ -62,6 +63,9 @@ test.data <- read.table("../../Data/Processed Data/Test data/Matrix.processed.be
 test.data <- as.data.frame(t(test.data))
 sum(is.na(test.data)) # 52000 total entries that are NA
 test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+test.design <-  read_excel("~/R Directory/ming_wan/stat540/team_Methylation-Badassays/data/Processed Data/Test data/metadata.GA_illumina_methylation.xls", 
+    sheet = "Metadata", skip = 28)
+
 ```
 
 ```{r filter training data to contain the same CpGs as the test}
@@ -95,7 +99,7 @@ hist(train.gsd)
 train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
-#### We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
+We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
 
 # Step 1: Unsupervised clustering:
 ---------------this section is exploratory analysis, we should move this to Nivi's exploratory file----------
@@ -236,7 +240,7 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
-saveRDS(netFit, './Data/Processed Data/netFit_alpha55_lambda_077_51pred.rds')
+#saveRDS(netFit, './Data/Processed Data/netFit_alpha55_lambda_077_51pred.rds')
 ```
 
 Cross validation with a fold of k = 5 (making each fold 9 samples large), was used to determine the optimal tuning parameters.
@@ -436,15 +440,16 @@ text(x = 60, y = 40, labels =
 
 Use hierarchical clustering to visualize the cluster 
 ```{r predict ethnicity for test set}
-x.test <- t(test.data)
+x.test <- test.rmna
 
 predictors(netFit) %in% rownames(test.data)
 
-x.test <- x.test[,colnames(t(test.data))%in% colnames(train.gsd)]
-sum(is.na(x.test))
+x.test <- x.test[, colnames(x.test) %in% colnames(train.data.gsd)]
+sum(is.na(x.test)) # there shouldn't be NAs present -- predict() function cannot predict if there are missing values
 
 select(x.test, contains(NA))
 y.predict <- predict(netFit,  x.test)
+svm.predict <- predict(svm.fit, x.test)
 
 # Hierarchical clustering of predicted data, distance measured by Euclidean distance, average linkage
 distance <- dist(y.predict, method="euclidean") 
@@ -453,9 +458,64 @@ plot(cluster, hang=-1, label=y.predict)
 
 ```
 
-# Step 4: Differentially Methylated Sites for Test Set
+# Step 4: Differentially Methylated Sites Between Test and Control
+
+Our classifier predicts that all test samples are Caucasians. This raises suspicion as we expected some ethnic diversity in our test set. We can look at the differentially methylated CpG sites between training and test set to see how much difference these two data sets have.
+
+
+Which set of CpG sites should we conduct DMA on?
+
+1) all CpGs present in both data sets ( after removing sites with missing values in test);
 
 ```{r}
 
+```
+
+
+2) only CpGs with s.d. > 0.1;
+
+
+```{r}
+merged.sd <- rbind(x.train, x.test)
+merged.design <-
+  data.frame(Group = relevel(
+    factor(c(rep("Train",nrow(x.train)),rep("Test", nrow(x.test)))), 
+    ref = "Train"),
+    row.names = rownames(merged.sd))
+DesMat <- model.matrix(~ Group, merged.design)
+
+```
+
+
+3) only CpGs identified as predictors using elastic net;
+
+
+```{r}
+
+```
+
+## Unsupervised Clustering PCA
+
+```{r}
+pc.merged <- prcomp(scale(merged.sd, cneter=T, scale = T))
+PC1to5 <- data.frame(pc.merged$x[,1:5])              # Take out first 5 PCs
+PC1to5 <- PC1to5 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
+                    left_join(design, 'Samplename')                         # Join the metadata info 
+head(PC1to5)            
+
+# scatter plot matrix for the first 5 PCs
+splom(PC1to5[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
+
+```
+
+
+## Differential Methylation Analysis with Single Markers
+
+```{r}
+DMRfit <- lmFit(M.CGI, DesMat)
+DMRfitEb <- eBayes(DMRfit)
+cutoff <- 0.01
+DMR <- topTable(DMRfitEb, coef = 'GroupALL', number = Inf, p.value = cutoff)
+head(DMR)
 ```
 
