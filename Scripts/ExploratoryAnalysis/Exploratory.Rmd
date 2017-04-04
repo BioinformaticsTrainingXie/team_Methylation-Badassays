@@ -1,6 +1,6 @@
 ---
 title: "Exploratory Analysis of Processed Data"
-author: "Nivretta"
+author: "Nivretta, Ming"
 output: github_document
 ---
 
@@ -64,13 +64,14 @@ full <- cbind(design, t(data))
 
 ```{r Random CpG Site Plots}
 #random cpg site from 1 to 464923
-probe_row <- 2000
+probe_row <- 6000
 
 #get the site name 
 probe_name <- colnames(full)[probe_row]
 
+
 #plot y = beta values for random cpg site for all samples, x= gestational age, plots divided by sample group, points colored by ethnicity
-ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) + 
+ggplot(full, aes(x = as.factor(ga), y = full[probe_name], colour = Ethnicity)) + 
   #geom_boxplot(aes(fill=Ethnicity), show.legend = TRUE) + 
   geom_jitter(width = 0.5) + 
   facet_wrap(~Sample_Group) + 
@@ -79,11 +80,11 @@ ggplot(full, aes(x = as.factor(ga), y = full[probe_row], colour = Ethnicity)) +
   ggtitle(paste("Beta values for CpG site", probe_name)) #+
   #stat_summary(fun.y = mean, geom="point", colour="darkred", size= 3)
 
-#beta values for random cpG site, box plots of ethnicity
-ggplot(full, aes(x = Ethnicity, y = full[probe_row])) + 
-  geom_boxplot(aes(fill=Ethnicity), show.legend = FALSE) + 
-  geom_jitter(width = 0.3) + 
-  facet_wrap(~sex) + 
+#beta values for random cpG site
+ggplot(full, aes(x = Ethnicity, y = full[probe_name])) + 
+  geom_violin(show.legend = FALSE) + 
+  geom_jitter(width = 0.3, aes(colour = sex)) + 
+  #facet_wrap(~sex) + 
   xlab("Ethnicity") + 
   ylab("Beta values") +
   ggtitle(paste("Beta values for CpG site", probe_name)) +
@@ -106,21 +107,33 @@ gsetFin2_ethnicity <- data[, order_ethnicity]
 #set the color pallette for heatmap
 cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
 
+col <- c(rep("darkgoldenrod1", times = ncol(gsetFin2_ethnicity)))
+col[grepl("Asian", full_ethnicity$Ethnicity)] <- "forestgreen"
+op <- par(mai = rep(0.5, 4))
 heatmap.2(cor(gsetFin2_ethnicity), 
-          Rowv=NA, 
-          Colv=NA, 
+          Rowv=FALSE, 
+          Colv=FALSE, 
           dendrogram = "none",
+          symm = TRUE,
           trace="none",
-          col=cols, 
-          margins = c(8,8),
-          #labRow = c(full_time$labels),
-          #labCol = c(full_time$labels),
-          key.title = NA)
-title("Sample Correlations, 
-      Ordered by Ethnicity then sample group")
+          col = cols, 
+          margins = c(1,1),
+          RowSideColors = col,
+          ColSideColors = col,
+          labRow = FALSE,
+          labCol = FALSE,
+          key.title = NA,
+          main = "Sample Correlations, 
+        Ordered by Ethnicity then sample group")
+legend("bottomleft", c("Caucasian", "Asian"), col = c("darkgoldenrod1", "forestgreen"), 
+    pch = 15)
+par(op)
 
 ```
 
+Sample group (Control, LOPET, IUGR) does not seem to affect the clustering of the samples. This fits with what it is known in the literature (control, LOPET, IUGR do not affect DNAm). Most of the samples seem to correlate evenly with each other.
+
+Now let's look at sample to sample correlation, ordered by ethnicity then gender.
 
 ```{r Sample to Sample Correlations2}
 
@@ -134,21 +147,31 @@ gsetFin2_ethnicity_sex <- data[, order_ethnicity_sex]
 #set the color pallette for heatmap
 cols<-c(rev(brewer.pal(9,"YlOrRd")), "#FFFFFF")
 
+col <- c(rep("darkgoldenrod1", times = ncol(gsetFin2_ethnicity_sex)))
+col[grepl("Asian", full_ethnicity_sex$Ethnicity)] <- "forestgreen"
+op <- par(mai = rep(0.5, 4))
 heatmap.2(cor(gsetFin2_ethnicity_sex), 
-          Rowv=NA, 
-          Colv=NA, 
+           Rowv=FALSE, 
+          Colv=FALSE, 
           dendrogram = "none",
+          symm = TRUE,
           trace="none",
-          col=cols, 
-          margins = c(8,8),
-          #labRow = c(full_time$labels),
-          #labCol = c(full_time$labels),
-          key.title = NA)
-title("Sample Correlations, 
-      Ordered by Ethnicity then Sex")
+          col = cols, 
+          margins = c(1,1),
+          RowSideColors = col,
+          ColSideColors = col,
+          labRow = FALSE,
+          labCol = FALSE,
+          key.title = NA,
+          main = "Sample Correlations, 
+        Ordered by Ethnicity then Gender")
+legend("bottomleft", c("Caucasian", "Asian"), col = c("darkgoldenrod1", "forestgreen"), 
+    pch = 15)
+par(op)
 
 ```
 
+It's difficult to tell if gender affects affects the clustering of the samples. We need to look at the data further.
 
 #Step 2: Unsupervised clustering
 
@@ -170,16 +193,6 @@ summary(pc.train)
 The `summary()` function describes the importance of the PCs. The first row describe again the standard deviation associated with each PC. The second row shows the proportion of the variance in the data explained by each component while the third row describe the cumulative proportion of explained variance.
 
 ```{r plot PCs}
-#Plot seems unncessary and vector labels not working, ok to remove?
-#g <- ggbiplot(pc.train, obs.scale = 1, var.scale = 1, 
-              #groups = design$Ethnicity, ellipse = TRUE, 
-              #circle = TRUE)
-#g <- g + scale_color_discrete(name = '')
-#g <- g + theme(legend.direction = 'horizontal', 
-               #legend.position = 'top')
-#print(g)
-
-
 
 PC123 <- data.frame(pc.train$x[,1:5])              # Take out first 3 PCs
 PC123 <- PC123 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into column to 
@@ -232,7 +245,7 @@ We can use the predict function if we observe new data and want to predict their
 ```{r}
 #download test data from dropbox
 #testdata.txt is in gitignore, be sure not to try to push to github
-download.file("https://www.dropbox.com/s/gjmtofnktayl6m1/testdata.txt?dl=1", "testdata.txt")
+#download.file("https://www.dropbox.com/s/gjmtofnktayl6m1/testdata.txt?dl=1", "testdata.txt")
 
 #read in test data
 test.data <- read.table("testdata.txt", row.names = 1, header = T)
@@ -241,5 +254,6 @@ sum(is.na(test.data)) # 52000 total entries that are NA
 test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
 
 #predict PCs for test set by projecting PC loadings to test data
-predict(pc.train, new.data = test.data)
+predicted <- predict(pc.train, new.data = test.rmna)
+str(predicted)
 ```
