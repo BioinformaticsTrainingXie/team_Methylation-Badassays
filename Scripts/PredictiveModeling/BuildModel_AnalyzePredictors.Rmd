@@ -1,12 +1,14 @@
 ---
 title: "ModelBuilding"
-author: "Victor"
+author: "Victor, Ming"
 date: "April 2, 2017"
 output: 
   github_document:
     toc: TRUE
     toc_depth: 2
 ---
+# S0 Set up workspace
+## Load packages
 ```{r load packages, message=FALSE}
 #source("https://bioconductor.org/biocLite.R")
 #biocLite('e1071')                                    # required for glmnet in caret
@@ -55,7 +57,7 @@ test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas
 test.data <- as.data.frame(t(test.data))   #transpose data
 ```
 
-# Section 1.0 Prefiltering Features
+# S1 Prefiltering Features
 
 Reducing the number of features can significantly reduce computational time, which is desirable when the dataset is large. However, we must be careful not remove potentially 'interesting' features that have a high chance of being useful in building a classifier.
 
@@ -92,7 +94,7 @@ train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
 We reduced the # of features to 'r ncol(train.data.gsd) to reduce computation time. train.data.gsd is the working dataset
-# Section 2.0 Supervised classification:
+# S2 Supervised classification:
 We decided to try two different models for building our classifer: elastic net logistic regression (glmnet) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
 ## 2.1 logistic regression with elastic net regularization
 ```{r rename}
@@ -172,7 +174,7 @@ system.time(svmFit <- train(x=x.train,
                             trControl= svmControl)	)
 svmFit
 ```
-# Section 3.0 Predict Ethnicity for external data Set
+# S3 Predict Ethnicity for external data Set
 Next, we use the model we built and run it on an external data set, where there is no ethnicity information.
 
 ## 3.1 glmnet
@@ -204,7 +206,7 @@ y.predictSVM <- predict(svmFit,  x.test)
 y.predictSVM
 ```
 
-# Section 4.0 Analysis of Predictors
+# S4 Analysis of Predictors
 Here we pull out the CpG sites and look at them more closely. First we will see if clustering with only the predictors separates asians and caucasians
 ## 4.1 Clustering
 ```{r load package, message = FALSE}
@@ -313,13 +315,15 @@ ggplot(cpg2, aes(x=Ethnicity, y=cg22853943))+
 ```
 We can see that the 1st and 11th ranked predictor CpG are both obviously differentially methylated in the training dataset between the asians and caucasians. This is a good sign that the model has chosen 'useful' CpG sites. However, perhaps these CpGs fit our training data too well.
 
-# Section 5.0
+# S5 Tune alpha and lambda 10 x 10 grid
 
 This section is to tune parameters across 100 different combinations of alpha and lambda
 
 ```{r tune glmnet parameters 10 by 10, eval = TRUE, include = TRUE}
-netGrid100 <-  expand.grid(alpha = c(0.20, 0.40, 0.60, 0.80, 1.00),
-                           lambda = c(0.05, 0.10, 0.15, 0.20, 0.25))
+netGrid100 <-  expand.grid(alpha = c(0.10, 0.20, 0.30, 0.40, 0.50, 
+                                     0.60, 0.70, 0.80, 0.90, 1.00),
+                           lambda = c(0.025, 0.050, 0.075, 0.10, 0.15, 
+                                      0.20, 0.25, 0.30, 0.40, 0.50))
 
 set.seed(2017)                              
 
