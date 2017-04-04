@@ -627,4 +627,67 @@ head(DMR)
 nrow(DMR)
 ```
 
-A total of `nrow(DMR)` 
+A total of `nrow(DMR)`sites are differentially methylated between training and test set with FDR < 0.05.
+
+## Re-do Elastic Net Logistic Regression
+
+```{r redo filtering sd}
+
+x.train.redo <- as.data.frame(merged.trunc[1:45,])
+
+train.sd.redo <- apply(as.matrix(x.train.redo), MARGIN = 2,FUN = sd)
+
+# filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
+train.gsd.redo <- subset(train.sd.redo, train.sd.redo > 0.10)
+str(train.gsd.redo)
+
+train.data.gsd.redo <- x.train.redo[,colnames(x.train.redo) %in% names(train.gsd.redo)]
+
+x.train.redo <- train.data.gsd.redo
+```
+
+```{r}
+
+netGrid <- expand.grid(alpha = c(0.55, 0.75, 0.9),
+                           lambda = c(0.077, 0.25))
+# netGrid <- expand.grid(alpha = (1:9)/10,
+#                           lambda = seq(0.05,0.5,length.out = 9))
+netGrid <- expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+# netGrid <- expand.grid(alpha = c(0.1),
+#                            lambda = c(0.5))
+```
+
+
+```{r tune glmnet parameters}
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+
+system.time(netFit.redo <- train(x = x.train.redo,   # samples need to be in rows, features need to be columns
+								y = y.train,                  
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								metric = 'ROC')                        # ROC because distribution is slightly skewed
+)
+
+netFit.redo
+length(predictors(netFit.redo))
+
+probTest.redo <- predict(netFit.redo, x.train.redo, type = 'prob')
+ethProb.redo <- probTest[,'Asian']
+ethProb.redo
+
+```
+
+```{r predict redo}
+x.test.redo <- merged.trunc[46:97,]
+
+x.test.redo <- x.test.redo[, colnames(x.test.redo) %in% colnames(x.train.redo)]
+
+y.predict.redo <- predict(netFit.redo,  x.test.redo, type = "prob")
+y.predict.redo[,"Asian"]
+y.predict.redo
+```
+
