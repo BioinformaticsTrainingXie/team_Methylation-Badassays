@@ -38,7 +38,7 @@ registerDoParallel(cluster)
 Read in pre-processed training data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
-```{r load data}
+```{r load training data}
 #setwd('../')                                           # note: all of these relative file path calls work only for knitting
 
 # load data (pre-processed training set)
