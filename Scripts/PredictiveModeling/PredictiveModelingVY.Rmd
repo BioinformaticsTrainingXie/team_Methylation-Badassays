@@ -292,9 +292,26 @@ glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the 
 plot(glmImp, top = 11)
 ```
 Here we plot the 11 predictor CpGs that our glmnet model uses against 'importance' which is calculated based on their relative t-statistic score.
-```{r plot top CpG}
+```{r plotting CpGs, warning = FALSE}
+# For training data set
+cpg1 <- x.train.predictors %>% select(Samplename, cg16329197) %>% 
+                                left_join(design, 'Samplename')
+ggplot(cpg1, aes(x=Ethnicity, y=cg16329197))+
+  geom_boxplot()+
+  ggtitle('Top CpG predictor methylation in Training data is differentially
+          methylated')+
+  ylab('cg16329197 methylation')
 
+# Pick 11th ranked CpG
+cpg2 <- x.train.predictors %>% select(Samplename, cg22853943) %>% 
+                                left_join(design, 'Samplename')
+ggplot(cpg2, aes(x=Ethnicity, y=cg22853943))+
+  geom_boxplot()+
+  ggtitle('11th ranked CpG predictor methylation in Training data is
+          differentially methylated')+
+  ylab('cg22853943 methylation')
 ```
+We can see that the 1st and 11th ranked predictor CpG are both obviously differentially methylated in the training dataset between the asians and caucasians. This is a good sign that the model has chosen 'useful' CpG sites. However, perhaps these CpGs fit our training data too well.
 
 # Section 5.0
 
