@@ -289,9 +289,9 @@ When we perform hierarchical clustering with the entire train and test set, we c
 ## 4.2 Plot CpG Predictors
 ```{r plot top 35}
 glmImp <- varImp(netFit, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp, top = 11)
+plot(glmImp, top = length(predictors(netFit)))
 ```
-Here we plot the 11 predictor CpGs that our glmnet model uses against 'importance' which is calculated based on their relative t-statistic score.
+Here we plot the 11 predictor CpGs against 'importance' which is calculated based on their relative t-statistic score.
 ```{r plotting CpGs, warning = FALSE}
 # For training data set
 cpg1 <- x.train.predictors %>% select(Samplename, cg16329197) %>% 
@@ -331,16 +331,16 @@ system.time(netFit100 <- train(x = x.train,
 								preProcess = c( "center", "scale"),    # Center and Scale the data
 								metric = 'ROC')                        # ROC because distribution is slightly skewed
 )
-
+netFit100
 ```
 
-```{r examine CV, eval = FALSE}
+```{r examine CV, eval = TRUE}
 trellis.par.set(caretTheme())
 ggplot(netFit100)
 #heatmap of results
 plot(netFit100, metric = "ROC", plotType = "level",
      scales = list(x = list(rot = 90)))
-length(predictors(netFit100))
 glmImp100 <- varImp(netFit100, scale = F) # gives the t-statistic for all CpGs in the dataset
-plot(glmImp100, top = 50)
+plot(glmImp100, top = length(predictors(netFit100)))
+length(predictors(netFit100))
 ```
