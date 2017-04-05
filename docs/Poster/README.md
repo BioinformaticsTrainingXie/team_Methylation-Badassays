@@ -1,1 +1,1 @@
-### ### This folder contains documents we used for making the poster
+### This folder contains documents we used for making the poster
