@@ -1,4 +1,4 @@
-Functional analysis of final list of predictors for glmnet
+Functional analysis of sites prioritized by limma and glmnet
 ================
 Nivretta Thatra
 
@@ -9,12 +9,7 @@ Load required packages:
 
 ``` r
 #getting cpg site functional info
-source("https://bioconductor.org/biocLite.R")
-```
-
-    ## Bioconductor version 3.4 (BiocInstaller 1.24.0), ?biocLite for help
-
-``` r
+#source("https://bioconductor.org/biocLite.R")
 #biocLite("COHCAP")
 #biocLite("GO.db")
 #biocLite("mygene")
@@ -24,11 +19,15 @@ library(COHCAP)
 
     ## Loading required package: WriteXLS
 
+    ## Warning: package 'WriteXLS' was built under R version 3.3.2
+
     ## Loading required package: COHCAPanno
 
     ## Loading required package: RColorBrewer
 
     ## Loading required package: gplots
+
+    ## Warning: package 'gplots' was built under R version 3.3.2
 
     ## 
     ## Attaching package: 'gplots'
@@ -56,11 +55,21 @@ library(dplyr)
 library(tidyverse)
 ```
 
+    ## Warning: package 'tidyverse' was built under R version 3.3.2
+
     ## Loading tidyverse: ggplot2
     ## Loading tidyverse: tibble
     ## Loading tidyverse: tidyr
     ## Loading tidyverse: readr
     ## Loading tidyverse: purrr
+
+    ## Warning: package 'ggplot2' was built under R version 3.3.2
+
+    ## Warning: package 'tibble' was built under R version 3.3.3
+
+    ## Warning: package 'tidyr' was built under R version 3.3.2
+
+    ## Warning: package 'readr' was built under R version 3.3.3
 
     ## Conflicts with tidy packages ----------------------------------------------
 
@@ -70,6 +79,8 @@ library(tidyverse)
 ``` r
 library(plyr)
 ```
+
+    ## Warning: package 'plyr' was built under R version 3.3.2
 
     ## -------------------------------------------------------------------------
 
@@ -96,6 +107,8 @@ library(mygene)
 ```
 
     ## Loading required package: GenomicFeatures
+
+    ## Warning: package 'GenomicFeatures' was built under R version 3.3.3
 
     ## Loading required package: BiocGenerics
 
@@ -130,6 +143,8 @@ library(mygene)
 
     ## Loading required package: S4Vectors
 
+    ## Warning: package 'S4Vectors' was built under R version 3.3.3
+
     ## Loading required package: stats4
 
     ## 
@@ -157,6 +172,8 @@ library(mygene)
 
     ## Loading required package: IRanges
 
+    ## Warning: package 'IRanges' was built under R version 3.3.3
+
     ## 
     ## Attaching package: 'IRanges'
 
@@ -174,9 +191,15 @@ library(mygene)
 
     ## Loading required package: GenomeInfoDb
 
+    ## Warning: package 'GenomeInfoDb' was built under R version 3.3.2
+
     ## Loading required package: GenomicRanges
 
+    ## Warning: package 'GenomicRanges' was built under R version 3.3.3
+
     ## Loading required package: AnnotationDbi
+
+    ## Warning: package 'AnnotationDbi' was built under R version 3.3.2
 
     ## Loading required package: Biobase
 
@@ -203,32 +226,34 @@ library(mygene)
 Load a set of CpG sites of interest
 
 ``` r
-interestingSites <- read.table("../../Data/Processed Data/predictorsGlmnet.txt")
+interestingSites_net <- read.table("../../Data/Processed Data/predictorsGlmnet.txt")
+
+interestingSites_limma <- read.table("../../Data/Processed Data/limma_fdr0.01_ethnicity_accountingforGender.txt")
 ```
 
-Step 1: Annotation to chromosome, location, gene and CpG Islands
-================================================================
+Step 1: Glmnet sites' annotation to chromosome, location, gene and CpG Islands
+==============================================================================
 
-The [COHCAP](https://www.bioconductor.org/packages/devel/bioc/manuals/COHCAP/man/COHCAP.pdf) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes. Specifically, these annotations contain which chromosome, location, gene and CpG island each CpG site maps to.
+The [COHCAP](https://www.bioconductor.org/packages/devel/bioc/manuals/COHCAP/man/COHCAP.pdf) (City of Hope CpG Island Analysis Pipeline) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes. Specifically, these annotations contain which chromosome, location, gene and CpG island each CpG site maps to.
 
 ``` r
-colnames(interestingSites) <- c("SiteID")
+colnames(interestingSites_net) <- c("SiteID")
 
 data(COHCAP.450k.HMM)
 data(COHCAP.450k.UCSC)
-annotated <- join(interestingSites, COHCAP.450k.HMM)
+annotated_net <- join(interestingSites_net, COHCAP.450k.HMM)
 ```
 
     ## Joining by: SiteID
 
 ``` r
-annotatedUCSC <- join(interestingSites, COHCAP.450k.UCSC)
+annotatedUCSC <- join(interestingSites_net, COHCAP.450k.UCSC)
 ```
 
     ## Joining by: SiteID
 
 ``` r
-knitr::kable(annotated) 
+knitr::kable(annotated_net) 
 ```
 
 | SiteID     | Chr |        Loc| Gene    | Island                |
@@ -270,15 +295,8 @@ The 11 CpG sites are found on chromosomes 1, 2, 3, 12, 15 or 17. The only differ
 
 The CpG sites map to three genes: SH2D5, IVL and C3orf21. Now let's look at which GO terms the three identified genes map to.
 
-Step 2: GO terms
-================
-
-``` r
-c(data.matrix(annotated$Gene))
-```
-
-    ##  [1] "SH2D5"   "IVL"     NA        NA        "C3orf21" NA        NA       
-    ##  [8] NA        NA        NA        NA
+Step 2: Glmnet CpG site-gene GO terms
+=====================================
 
 ``` r
 querySH2D5 <- mygene::query("SH2D5", fields='go', species='human')$hits
@@ -396,6 +414,81 @@ Summary:
 --------
 
 Gene SH2D5 is involved in postsynaptic density (presumably in neurons), cell junction, and the postsynaptic membrane. Gene IVL is involved in cornfication (hard layer of skin formation), peptide cross-linking, and other protein binding. Gene C3orf21 is a key component of ER membrane, is involved in enzyme transport, and in ion binding.
+
+Step 3: Limma sites' annotation to chromosome, location, gene and CpG Islands
+=============================================================================
+
+Repeat step 1 but for sites prioritized by limma.
+
+``` r
+colnames(interestingSites_limma) <- c("SiteID")
+
+annotated_limma <- join(interestingSites_limma, COHCAP.450k.HMM)
+```
+
+    ## Joining by: SiteID
+
+``` r
+knitr::kable(annotated_limma) 
+```
+
+| SiteID     | Chr |       Loc| Gene      | Island               |
+|:-----------|:----|---------:|:----------|:---------------------|
+| cg16329197 | 12  |  53359506| NA        | 12:51645202-51645774 |
+| cg25025879 | 12  |  53359317| NA        | 12:51645202-51645774 |
+| cg05393297 | 12  |  53359155| NA        | 12:51645202-51645774 |
+| cg14581129 | 12  |  53358946| NA        | 12:51645202-51645774 |
+| cg26513180 | 16  |  89883248| FANCA     | 16:88409682-88410944 |
+| cg19041462 | 8   |  17146201| VPS37A    | NA                   |
+| cg12011926 | 15  |  29037099| NA        | NA                   |
+| cg05795554 | 16  |  89883212| FANCA     | 16:88409682-88410944 |
+| cg16808927 | 16  |    710921| WDR90     | 16:650649-651454     |
+| cg06903451 | 1   |   1323192| CCNL2     | 1:1312116-1313099    |
+| cg12419862 | 22  |  24373484| LOC391322 | 22:22702803-22703712 |
+| cg01172526 | X   |   2826829| ARSD      | NA                   |
+| cg10265016 | 2   |  18061319| KCNS3     | NA                   |
+
+Summary:
+--------
+
+The 13 CpG sites are found on chromosomes 1, 2, 8, 12, 15, 16, 22 or the X chromosome.
+
+The CpG sites map to seven genes: FANCA, VPS37A, WDR90, CCNL2, LOC391322, ARSD and KCNS3. Now let's look at which GO terms the seven identified genes map to.
+
+Step 4: Limma CpG site-gene GO terms
+====================================
+
+Hiding these results because they are quite lengthy. Please see summary below.
+
+``` r
+queryFANCA <- mygene::query("FANCA", fields='go', species='human')$hits
+SH2D5 <- lapply(queryFANCA, as.list)
+
+queryVPS37A <- mygene::query("VPS37A", fields='go', species='human')$hits
+VPS37A <- lapply(queryVPS37A, as.list)
+
+queryWDR90 <- mygene::query("WDR90", fields='go', species='human')$hits
+WDR90 <- lapply(queryWDR90, as.list)
+
+queryCCNL2 <- mygene::query("CCNL2", fields='go', species='human')$hits
+CCNL2 <- lapply(queryCCNL2, as.list)
+
+queryLOC391322 <- mygene::query("LOC391322", fields='go', species='human')$hits
+LOC391322 <- lapply(queryLOC391322, as.list)
+
+queryARSD <- mygene::query("ARSD", fields='go', species='human')$hits
+ARSD <- lapply(queryARSD, as.list)
+
+queryKCNS3 <- mygene::query("KCNS3", fields='go', species='human')$hits
+KCNS3 <- lapply(queryKCNS3, as.list)
+```
+
+Summary:
+--------
+
+FANCA is involved in many processes, most notably in DNA repair, gonad development, and inflammation VPs37A is involved in protein transportation and viral life cycles. WDR90 is involved in protein binding. CCNL2 is involved in transcription and regulation of RNA polymerases. LOC391322 did not have any GO terms. ARSD is involved in many process, most notably lipid metabolic processin and ion binding. KCN3 is involved in ion transport and voltage-gated channel regulation.
+
+There does not seem to be any clear patterns in the functions of genes identified by the two methods. Interestingly, limma found one important gene associated with gonad development, suggesting the importance of the interaction effect between gender and ancestry.
 
 Notes:
 ======
