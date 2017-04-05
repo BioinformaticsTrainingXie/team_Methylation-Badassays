@@ -2,7 +2,7 @@
 title: "Functional analysis of sites prioritized by limma and glmnet"
 author: "Nivretta Thatra"
 data: "March 3, 2017"
-output: word_document
+output: github_document
 ---
 
 #Step 0: Load Packages and Data
