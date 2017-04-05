@@ -34,3 +34,5 @@ For the details of the project ideas, dataset and methods we use in this porject
     * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to use the identified CpG sites from [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) to determine the genetic ancestry of [a second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8) whose genetic ancestry is unknown.
 
 5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) folder contains the results. 
+
+6. [Poster](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/poster.pdf)
