@@ -23,7 +23,7 @@ Then, we used a linear model to identify differentially methyalted probes with l
 
 We also used the processed data to perform [exploratory analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md).
 
-We compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) to generate a claaifier that will predict ancestry based on DNA methylation fatures. Please see [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.Rmd) for details.
+We compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) to generate a classifier that will predict ancestry based on DNA methylation fatures. Please see [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.Rmd) for details.
 
 
 ### Table of contents:
