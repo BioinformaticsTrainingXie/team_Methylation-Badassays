@@ -1,0 +1,350 @@
+---
+title: "CV_TestPerformance"
+author: "Ming, Victor"
+date: "April 4, 2017"
+output: html_document
+---
+
+# S0 Set up workspace
+## Load packages
+```{r load packages, message=FALSE}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite('e1071')                                    # required for glmnet in caret
+#biocLite('pROC')
+library(pROC)
+library(ggplot2)
+library(limma)
+library(caret)
+library(dplyr)
+library(parallel)
+library(doParallel)
+```
+## Parallel processing
+Set up parallel processing to speed up trian()
+Make sure to specify in trainControl()
+
+```{r parallel processing, message=FALSE}
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+```
+## Load data
+Read in pre-processed data:
+*Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
+
+```{r load data}
+setwd('../')                                           # note: all of these relative file path calls work only for knitting
+
+# load data (pre-processed training set)
+train.data <- read.table('../data/Processed Data/data.txt')
+str(train.data)                                   ## row names are CpG sites, column names are sample names
+# transpose our data to have rows as observations, which is more convenient later on for building models
+train.data <- as.data.frame(t(train.data))
+
+# load metadata
+train.design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
+str(train.design)
+
+row.names(train.data) == train.design$Samplename               # check that the samples are in same order
+```
+
+Read in test data:
+```{r read test}
+setwd('../') # for knitting
+# read pre-processed test data
+test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- as.data.frame(t(test.data))   #transpose data
+
+# meta data for test data
+test.design <-  read_excel("../../data/Processed Data/Test data/metadata.GA_illumina_methylation.xls", 
+    sheet = "Metadata", skip = 28)
+
+# subset only columns we need and rename them
+test.design <- test.design[test.design$`Sample name` %in% rownames(test.data),]
+test.design <- test.design[,c(1,7,8,10)]
+colnames(test.design)[1] <- "Samplename"
+colnames(test.design)[3] <- "sex"
+colnames(test.design)[4] <- "ga"
+
+str(test.design)
+
+```
+
+# S1 Prefiltering Features
+
+Reducing the number of features can significantly reduce computational time, which is desirable when the dataset is large. However, we must be careful not remove potentially 'interesting' features that have a high chance of being useful in building a classifier.
+
+## 1.1 Remove NAs
+
+We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor.
+```{r remove NAs}
+#remove sites with NAs
+sum(is.na(test.data)) # 52000 total entries that are NA
+test.rmna <- test.data[, colSums(is.na(test.data)) == 0]  # remove columns with NAs present
+```
+## 1.2 Reduce CpGs to match test and train
+Some CpGs were removed in the Test dataset from preprocessing and QC. These need to be removed, or errors might occur when trying to predict.
+
+```{r filter training data to contain the same CpGs as the test}
+# this isn't necessary if the test data didn't have CpGs removed (as a result of QC/preprocessing)
+train.data <- train.data[,colnames(train.data) %in% colnames(test.rmna)]
+```
+
+## 1.3 Prefiltering cpgs (most variable) 
+The goal of this prefiltering section is to reduce computational time without compromising detecting interesting features.
+
+```{r prefiltering based on SD}
+train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd) #caculate SD for each feature
+hist(train.sd)                    # histogram of the s.d.'s
+abline(v = mean(train.sd)) 
+
+# filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
+train.gsd <- subset(train.sd, train.sd > 0.10)
+hist(train.gsd)
+
+# subset training data to only highly variable features
+train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
+```
+
+We reduced the # of features to `r ncol(train.data.gsd)` to reduce computation time. `train.data.gsd` is the working dataset.
+# S2 Supervised classification:
+We decided to try two different models for building our classifer: elastic net logistic regression (`glmnet`) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
+## 2.1 logistic regression with elastic net regularization
+```{r rename}
+#renamed training data for standard coding
+x.train <- train.data.gsd
+y.train <- train.design$Ethnicity 
+```
+
+```{r subset data for faster run time, eval = FALSE, include = FALSE}
+# This subsetting is for testing code out without computational delay
+# since the data is very large (~450k rows), I will subset the data first to be able to play around with the code quickly.
+x.train <- train.data.gsd[,1:1000] #takes the first 1000 columns (cpgs)
+```
+
+```{r Specify resampling method}
+k = 5
+M = 3
+
+fitControl <- trainControl(method = "repeatedcv", 
+													 number = k,                 # Number of folds
+													 repeats = M,
+													 ## Estimate class probabilities
+													 classProbs = TRUE,
+                           ## Evaluate performance using 
+                           ## the following function
+                           summaryFunction = twoClassSummary,
+													 allowParallel = TRUE # allow parallel processing
+													 )  
+
+netGrid <- expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+```
+We specify the model to be built using repeated cross validation with a fold = 5, and repeats = 3. We tune the model holding alpha constant (alpha = 0.75), keeping alpha high to favour L1 norm to achieve a small panel of biomarkers. Lambda, the magnitude of the penalty, is tested at 0.077, and 0.25.
+
+```{r tune glmnet parameters}
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
+								y = y.train,                  
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								metric = 'Accuracy')                        # ROC because distribution is slightly skewed
+)
+
+netFit
+netFit$results
+#saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
+```
+
+```{r extract features}
+predictorsNet <- predictors(netFit)
+length(predictorsNet)
+#write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
+```
+Our glmnet-built model has chosen `r length(predictorsNet)` CpGs that can be used to predict ethnicity.
+
+## 2.2 SVM with linear kernel
+This section is for building the model using SVM with a linear kernel (i.e. penalty parameter C = 1). However, because computational time is long, this section is excluded when ran, since we have chosen the glmnet model to be our final model.
+
+```{r svm linear, eval = TRUE}
+svmControl <- trainControl(method="repeatedcv",   
+                           number = 5,
+                           repeats=3,		    
+                           summaryFunction=twoClassSummary,	# Use AUC to pick the best model
+                           classProbs=TRUE,
+                           allowParallel = TRUE)
+
+system.time(svmFit <- train(x=x.train,
+                            y= y.train,
+                            method = "svmLinear",
+                            preProc = c("center","scale"),
+                            metric="ROC",
+                            trControl= svmControl)	)
+svmFit
+```
+
+# S3 Compare Model Performance Using Cross Validation
+
+```{r Estimate test error by nested cv}
+# this is adapted from Amrit's code from lec 19
+#use repeated CV to estimate test performance
+set.seed(2018)
+
+# list of lists containing fold ids
+folds <- lapply(1:M, function(i) createFolds(y.train, k = k))
+
+system.time(netTesterror <- lapply(folds, function(i){
+  lapply(i, function(j){
+    # tune parameters with CV
+    set.seed(2019)
+    fitControl <- trainControl(method = "repeatedcv", 
+													 number = k,                 
+													 repeats = M,
+													 classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE,
+													 allowParallel = T)
+    
+    
+    # build elastic net classifier
+    netFit <- train(x =  x.train[-j,],   
+								y = y.train[-j],                  
+								method = "glmnet",                     
+								trControl = fitControl,
+								preProcess = c( 'center', 'scale'),
+								metric = 'ROC')   
+    
+    # Estimate probabilities of test predictions
+    probTest <- predict(netFit, x.train[j,], type = 'prob')
+    ethProb <- probTest[,'Asian']
+    ethProb
+  })
+
+})
+)
+# netTesterror
+saveRDS(netTesterror,"netTesterror.rds")
+```
+
+```{r Performance}
+# Computer classification performance measures
+# enet
+Performance <- mapply(function(x, y){
+  auc <- pROC::roc(y.train[unlist(x)], unlist(y),
+                   direction ='<',
+                   levels = c('Caucasian', 'Asian'),
+                   percent = TRUE)
+  list(tpr = auc$sensitivities,
+       fpr = 100 - auc$specificities,
+       auc = round(auc$auc, 2))
+}, x = folds, y = netTesterror)
+Performance
+```
+
+```{r ROC curve}
+# plot ROC curve
+
+plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
+     type = 'l', col = 1, xlab = '100 - sensitivity',
+     ylab = 'Sensitivity', main = 'Enet')
+for(i in length(folds)){
+  points(Performance['tpr',][[i]] ~ Performance['fpr',][[i]],
+         type = 'l', col = 2)
+}
+text(x = 60, y = 40, labels =
+       paste0('mean AUC = ', round(mean(unlist(Performance['auc',])), 1),
+              '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
+```
+
+## Support Vector Machine
+
+```{r train svm}
+# Linear kernel SVM with CV
+    fitControl <- trainControl(method = "cv", 
+													 number = k,                 
+													 classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE,
+													 allowParallel = T)
+    
+    
+    # build SVM classifier
+    svm.fit <- train(x=x.train,
+                        y= y.train,
+                        method = "svmLinear",
+                        preProc = c("center","scale"),
+                        metric="ROC",
+                        trControl=fitControl)
+
+    svm.fit
+```
+
+
+```{r Estimate test error by nested cv}
+# this is adapted from Amrit's code from lec 19
+#use repeated CV to estimate test performance
+set.seed(2018)
+
+# list of lists containing fold ids
+folds <- createFolds(y.train, k = k)
+
+system.time(svmTesterror <- lapply(folds, function(j){
+    # tune parameters with CV
+    fitControl <- trainControl(method = "cv", 
+													 number = k,                 
+													 classProbs = TRUE,
+                           summaryFunction = twoClassSummary,
+													 savePredictions = TRUE, allowParallel = T)
+    
+    
+    # build SVM classifier
+    svmFit <- train(x=x.train[-j,],
+                        y= y.train[-j],
+                        method = "svmLinear",
+                        preProc = c("center","scale"),
+                        metric="ROC",
+                        trControl=fitControl)
+    
+    # Estimate probabilities of test predictions
+    probTest <- predict(svmFit, x.train[j,], type = 'prob')
+    ethProb <- probTest[,'Asian']
+    ethProb
+
+})
+)
+#svmTesterror
+```
+
+```{r Performance}
+# Computer classification performance measures
+# enet
+Performance <- mapply(function(x, y){
+  auc <- pROC::roc(y.train[unlist(x)], unlist(y),
+                   direction ='<',
+                   levels = c('Caucasian', 'Asian'),
+                   percent = TRUE)
+  list(tpr = auc$sensitivities,
+       fpr = 100 - auc$specificities,
+       auc = round(auc$auc, 2))
+}, x = folds, y = svmTesterror)
+Performance
+```
+
+```{r ROC curve}
+# plot ROC curve
+
+plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
+     type = 'l', col = 1, xlab = '100 - sensitivity',
+     ylab = 'Sensitivity', main = 'Linear Kernel SVM')
+for(i in length(folds)){
+  points(Performance['tpr',][[i]] ~ Performance['fpr',][[i]],
+         type = 'l', col = 2)
+}
+text(x = 60, y = 40, labels =
+       paste0('mean AUC = ', round(mean(unlist(Performance['auc',])), 1),
+              '+/-', round(sd(unlist(Performance['auc',])), 1), '%'))
+```
+
+

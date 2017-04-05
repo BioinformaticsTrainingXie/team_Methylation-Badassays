@@ -6,9 +6,9 @@ output:
     toc: TRUE
 ---
 
+Contents in this file are copied to and tidied in BuildModel_AnalyzePredictors.Rmd and Exploratory.Rmd files.
 # Step 0: Load Packages and Data
 Load required packages:
-
 
 ```{r load packages}
 #source("https://bioconductor.org/biocLite.R")
@@ -189,7 +189,7 @@ Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can c
 ## PCA projection of loadings to test data:
 
 We can use the predict function if we observe new data and want to predict their PCs values.
-
+(Since PCs cannot distinguish ethnicities this step is not useful)
 ```{r}
 # predict PCs for test set by projecting PC loadings to test data
 predict(pc.train, new.data = test.data)

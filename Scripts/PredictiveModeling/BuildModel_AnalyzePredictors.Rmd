@@ -43,10 +43,10 @@ str(train.data)                                   ## row names are CpG sites, co
 train.data <- as.data.frame(t(train.data))
 
 # load metadata
-design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
-str(design)
+train.design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
+str(train.design)
 
-row.names(train.data) == design$Samplename               # check that the samples are in same order
+row.names(train.data) == train.design$Samplename               # check that the samples are in same order
 ```
 
 Read in test data:
@@ -55,6 +55,20 @@ setwd('../') # for knitting
 # read pre-processed test data
 test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
+
+# meta data for test data
+test.design <-  read_excel("../../data/Processed Data/Test data/metadata.GA_illumina_methylation.xls", 
+    sheet = "Metadata", skip = 28)
+
+# subset only columns we need and rename them
+test.design <- test.design[test.design$`Sample name` %in% rownames(test.data),]
+test.design <- test.design[,c(1,7,8,10)]
+colnames(test.design)[1] <- "Samplename"
+colnames(test.design)[3] <- "sex"
+colnames(test.design)[4] <- "ga"
+
+str(test.design)
+
 ```
 
 # S1 Prefiltering Features
@@ -63,7 +77,7 @@ Reducing the number of features can significantly reduce computational time, whi
 
 ## 1.1 Remove NAs
 
-We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor
+We should remove any sites with NAs in them or else predictions cannot be generated for these samples if the CpG site is chosen as a predictor.
 ```{r remove NAs}
 #remove sites with NAs
 sum(is.na(test.data)) # 52000 total entries that are NA
@@ -82,25 +96,25 @@ The goal of this prefiltering section is to reduce computational time without co
 
 ```{r prefiltering based on SD}
 train.sd <- apply(as.matrix(train.data), MARGIN = 2,FUN = sd) #caculate SD for each feature
-sd(train.sd)
-hist(train.sd)                    # histogram
+hist(train.sd)                    # histogram of the s.d.'s
 abline(v = mean(train.sd)) 
 
 # filter CpG sites with low s.d: only keep those with s.d higher than the average s.d across all CpG sites
 train.gsd <- subset(train.sd, train.sd > 0.10)
 hist(train.gsd)
 
+# subset training data to only highly variable features
 train.data.gsd <- train.data[,colnames(train.data) %in% names(train.gsd)]
 ```
 
-We reduced the # of features to 'r ncol(train.data.gsd)' to reduce computation time. train.data.gsd is the working dataset
+We reduced the # of features to `r ncol(train.data.gsd)` to reduce computation time. `train.data.gsd` is the working dataset.
 # S2 Supervised classification:
-We decided to try two different models for building our classifer: elastic net logistic regression (glmnet) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
+We decided to try two different models for building our classifer: elastic net logistic regression (`glmnet`) and support vector machines (SVM). Both of these models have been used in the literature to build predictive models based on 450k DNA methylation data (Horvath 2013, De Carli et al 2017), indicating that they may be well-suited for our dataset.
 ## 2.1 logistic regression with elastic net regularization
 ```{r rename}
-#renamed just so that I can copy Amrit's code
+#renamed training data for standard coding
 x.train <- train.data.gsd
-y.train <- design$Ethnicity 
+y.train <- train.design$Ethnicity 
 ```
 
 ```{r subset data for faster run time, eval = FALSE, include = FALSE}
@@ -121,7 +135,7 @@ fitControl <- trainControl(method = "repeatedcv",
                            ## Evaluate performance using 
                            ## the following function
                            summaryFunction = twoClassSummary,
-													 allowParallel = TRUE
+													 allowParallel = TRUE # allow parallel processing
 													 )  
 
 netGrid <- expand.grid(alpha = c(0.75),
@@ -131,9 +145,6 @@ We specify the model to be built using repeated cross validation with a fold = 5
 
 ```{r tune glmnet parameters}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
-
-#netGrid <- expand.grid(.alpha = seq(.05, 1, length = 15),
- #                                                   .lambda = c((1:5)/10)) # grid of tuning parameters to try out
 
 system.time(netFit <- train(x = x.train,   # samples need to be in rows, features need to be columns
 								y = y.train,                  
@@ -145,6 +156,7 @@ system.time(netFit <- train(x = x.train,   # samples need to be in rows, feature
 )
 
 netFit
+netFit$results
 #saveRDS(netFit, './Data/Processed Data/netFitfinal.rds')
 ```
 
@@ -153,10 +165,10 @@ predictorsNet <- predictors(netFit)
 length(predictorsNet)
 #write.table(predictorsNet, './Data/Processed Data/predictorsGlmnet.txt')
 ```
-Looks like our glmnet-built model has chosen 'r length(predictorsNet)' CpGs that can be used to predict ethnicity.
+Our glmnet-built model has chosen `r length(predictorsNet)` CpGs that can be used to predict ethnicity.
 
-## 2.2 SVM linear
-This section is for building the model using SVM. However, because computational time is long, this section is can be excluded when ran, since we have chosen the glmnet model to be our final model.
+## 2.2 SVM with linear kernel
+This section is for building the model using SVM with a linear kernel (i.e. penalty parameter C = 1). However, because computational time is long, this section is excluded when ran, since we have chosen the glmnet model to be our final model.
 
 ```{r svm linear, eval = TRUE}
 svmControl <- trainControl(method="repeatedcv",   
@@ -175,9 +187,11 @@ system.time(svmFit <- train(x=x.train,
 svmFit
 ```
 # S3 Predict Ethnicity for external data Set
-Next, we use the model we built and run it on an external data set, where there is no ethnicity information.
+Next, we use the models we built and run it on an external data set, where there is no ethnicity information.
 
 ## 3.1 glmnet
+Using the `predict()` function we can obtain both binary class prediction results as well as probabilities of being "Asian" under logistic regression model.
+
 ```{r predict ethnicity for test set}
 #subset x.test down to the sites used for training (after prefilter)
 x.test <- test.data[,colnames(test.data) %in% names(x.train)]
@@ -192,17 +206,21 @@ y.predictNetProb
 
 #saveRDS(y.predictNet, './data/Processed Data/y_predictNet.rds')
 ```
-It looks like our model classifies the entire external dataset is Caucasian. This is suspicious, as we believe the samples to come from a relatively heterogenous population. However, due to time constraints, we decided to move ahead and perform downstream analysis. If there was more time, we might think about where we can change our model tuning process to produce more sensible results. 
+It looks like our model classifies the entire external dataset is Caucasian. This is suspicious, as we believe the samples to come from a relatively heterogenous population. However, due to time constraints, we decided to move ahead and perform downstream analysis. If there was more time, we might think about where we can change our modelling process to produce more sensible results. 
 
 #### Some explanations for this result:
 - It's possible that the data set is truly all Caucasian.
-- The dataset is too 'different' to have the classifier ran on. (too much noise)
-- The self-reported ethnicities in the training data is too unreliable
+
+- There are just too many predictors for elastic net to select, some features can be significantly different by ethnicity in training data by chance but were still selected as predictors, which introduces overfitting;
+
+- The test dataset is too 'different' to have the classifier ran on. (mostly differentially methylated between test and training set across all sites)
+
+- The self-reported ethnicities in the training data is unreliable.
 
 ## 3.2 SVM 
-```{r SVM predict on test, eval = FALSE}
+```{r SVM predict on test}
 y.predictSVM <- predict(svmFit,  x.test)
-#throws a warning
+
 y.predictSVM
 ```
 
@@ -228,14 +246,14 @@ swaplabels <- function(hclust, des){     # des is a design matrix containing 'Sa
   return(hclust)
 }
 
-hclust <- swaplabels(hclust, design)
+hclust <- swaplabels(hclust, train.design)
 y1 = cutree(hclust, 3)
 ColorDendrogram(hclust, y = y1, labels = names(y1), branchlength = 1.0, main = 'Clustering train on all CpGs')
 
 #with predictors only
 x.train.predictors <- x.train[,colnames(x.train) %in% predictorsNet]
 hclust2 <- hclust(dist(x.train.predictors, method = 'euclidean'))
-hclust2 <- swaplabels(hclust2, design)          #swap labels with ethnicity
+hclust2 <- swaplabels(hclust2, train.design)          #swap labels with ethnicity
 y2 = cutree(hclust2, 2)
 ColorDendrogram(hclust2, y = y2, labels = names(y2), branchlength = 0.3, main = 'Clustering train with predictors only')
 ```
@@ -262,7 +280,7 @@ x.train.predictors <- x.train.predictors %>%
                         tibble::rownames_to_column('Samplename') 
 
 # replace sample name with true ethnicity info
-#x.train.predictors <- x.train.predictors %>% left_join(select(design, Samplename, Ethnicity), by = 'Samplename') 
+#x.train.predictors <- x.train.predictors %>% left_join(select(train.design, Samplename, Ethnicity), by = 'Samplename') 
 #x.train.predictors$Samplename <- x.train.predictors$Ethnicity 
 
 # combine train and test
@@ -272,14 +290,14 @@ x.test.train.predictors <- full_join(x.train.predictors, x.test.predictors) %>%
 hclust5 <- hclust(dist(x.test.train.predictors, method = 'euclidean'))
 labels5 <- data.frame(labels(hclust5))   # pulls out current labels (samplename)
 colnames(labels5) <- 'Samplename'
-labels5 <- labels5 %>% left_join(select(design, Samplename, Ethnicity), by = 'Samplename')
+labels5 <- labels5 %>% left_join(select(train.design, Samplename, Ethnicity), by = 'Samplename')
 #replace train samples with ethnicity labels
 #labels5$Samplename[!is.na(labels5$Ethnicity)] <- as.character(labels5$Ethnicity[!is.na(labels5$Ethnicity)])
 
 labels(hclust5) <- labels5$Samplename
 
 
-hclust5 <- swaplabels(hclust5, design)
+hclust5 <- swaplabels(hclust5, train.design)
 labels(hclust5)
 
 y5 = cutree(hclust5, 5)
@@ -297,7 +315,7 @@ Here we plot the 11 predictor CpGs against 'importance' which is calculated base
 ```{r plotting CpGs, warning = FALSE}
 # For training data set
 cpg1 <- x.train.predictors %>% select(Samplename, cg16329197) %>% 
-                                left_join(design, 'Samplename')
+                                left_join(train.design, 'Samplename')
 ggplot(cpg1, aes(x=Ethnicity, y=cg16329197))+
   geom_boxplot()+
   ggtitle('Top CpG predictor methylation in Training data is differentially
@@ -306,7 +324,7 @@ ggplot(cpg1, aes(x=Ethnicity, y=cg16329197))+
 
 # Pick 11th ranked CpG
 cpg2 <- x.train.predictors %>% select(Samplename, cg22853943) %>% 
-                                left_join(design, 'Samplename')
+                                left_join(train.design, 'Samplename')
 ggplot(cpg2, aes(x=Ethnicity, y=cg22853943))+
   geom_boxplot()+
   ggtitle('11th ranked CpG predictor methylation in Training data is
@@ -348,3 +366,137 @@ glmImp100 <- varImp(netFit100, scale = F) # gives the t-statistic for all CpGs i
 plot(glmImp100, top = length(predictors(netFit100)))
 length(predictors(netFit100))
 ```
+
+# S6 Re-do Modeling and Prediction by Homogenizing Training and Test Sets
+
+Following the discussions in step 3, we aim to re-do our model fitting and prediction by first assessing how different is the test set from our training data using PCA. Then we attempt to homogenize the two datasets by removing the top PC. After homogenization, we re-fit elastic net logistic regression with the transformed training set and re-predict the transformed test set.
+
+## 6.1 Merge Test Set with Training Set
+
+Merge the two datasets, only CpGs present in both sets are kept.
+
+```{r merge all}
+merged.all <- rbind(train.data, test.data[, colnames(test.data) %in% colnames(train.data)])
+merged.design <- rbind(train.design[,c("Samplename","ga","sex")], test.design[,c("Samplename","ga","sex")])
+merged.design$Group = relevel(
+    factor(c(rep("Train",nrow(train.data)),rep("Test", nrow(test.data)))), 
+    ref = "Train")
+
+```
+
+## 6.2 Unsupervised Clustering PCA
+
+First we perform PCA on the merged dataset to spot potential systematic differences between test vs. training set. PCA is performed for the correlation matrix.
+
+```{r merged PCA}
+pc.merged <- prcomp(merged.all, center=T, scale = T) # perform PCA on correlation matrix
+PC1to5 <- data.frame(pc.merged$x[,1:5])              # Take out first 5 PCs
+PC1to5 <- PC1to5 %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into a column 
+                    left_join(merged.design, 'Samplename')                         # Join the metadata info 
+
+summary(pc.merged)
+# first PC can explain 31.5% variance
+
+# scree plot
+plot(pc.merged, type = "l", main = "PCA Scree Plot for Merged Data")
+
+# scatter plot matrix for the first 5 PCs
+splom(PC1to5[,c(2:6,9)], raster = TRUE)
+# first PC is significantly different between training vs. test
+
+```
+
+The first PC differentiates training and test set, which means there are systematic differences between the two sets. We must discard the top PC first before predicting test set. This is done by:
+
+1. Reconstruct the (centered and scaled) merged dataset by discarding the top PC;
+
+2. Re-scale and re-center the correlation matrix for the reconstructed merged data;
+
+```{r discard the first pc}
+# discard the first PC
+Xhat<- pc.merged$x[,-1] %*% t(pc.merged$rotation[,-1]) 
+
+# back-scale features to original center and scale
+merged.trunc <- scale(Xhat, center = F, scale = 1/pc.merged$scale)
+merged.trunc <- scale(merged.trunc, center = -1 * pc.merged$center, scale = FALSE)
+str(merged.trunc)
+
+# verify that PC truncation was sucessful
+pc.trunc <- prcomp(merged.trunc, center=T, scale = T)
+
+PC1to5.trunc <- data.frame(pc.trunc$x[,1:5])              # Take out first 5 PCs
+PC1to5.trunc <- PC1to5.trunc %>% tibble::rownames_to_column('Samplename') %>%             # Put sample names into a column
+                    left_join(merged.design, 'Samplename')                         # Join the metadata info
+# scatter plot matrix for the first 5 PCs
+splom(PC1to5.trunc[,c(2:6,9)], raster = TRUE)
+# no more separation between test and training
+```
+
+## 6.3 Re-do Elastic Net Logistic Regression
+
+After discarding the top PC for merged data, we separate training and test dataset again and use the homogenized training set to re-fit the logistic regression model with elastic net.
+
+```{r redo filtering sd}
+# subset only training samples
+x.train.redo <- as.data.frame(merged.trunc[1:45,])
+
+# filter low variances features
+train.sd.redo <- apply(as.matrix(x.train.redo), MARGIN = 2,FUN = sd)
+train.gsd.redo <- subset(train.sd.redo, train.sd.redo > 0.10)
+train.data.gsd.redo <- x.train.redo[,colnames(x.train.redo) %in% names(train.gsd.redo)]
+
+x.train.redo <- train.data.gsd.redo
+```
+
+```{r tuning grid}
+netGrid <- expand.grid(alpha = (1:9)/10,
+                          lambda = seq(0.05,0.5,length.out = 9))
+netGrid <- expand.grid(alpha = c(0.75),
+                           lambda = c(0.077, 0.25))
+```
+
+Re-fit the `glmnet` model:
+
+```{r tune glmnet parameters}
+set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
+
+
+system.time(netFit.redo <- train(x = x.train.redo,   # samples need to be in rows, features need to be columns
+								y = y.train,                  
+								method = "glmnet",                     # glmnet model
+								trControl = fitControl,                # use fitControl to specify cross validation
+								tuneGrid = netGrid,
+								preProcess = c( "center", "scale"),    # Center and Scale the data
+								metric = 'ROC')                        # ROC because distribution is slightly skewed
+)
+
+netFit.redo
+length(predictors(netFit.redo))
+
+# Histogram of probability(Asian)
+probTest.redo <- predict(netFit.redo, x.train.redo, type = 'prob')
+ethProb.redo <- probTest.redo[,'Asian']
+hist(ethProb.redo)
+
+```
+
+Predict the homogenized test set:
+
+```{r predict redo}
+# subset the test set
+x.test.redo <- merged.trunc[46:97,]
+
+x.test.redo <- x.test.redo[, colnames(x.test.redo) %in% colnames(x.train.redo)]
+
+# classification
+
+y.predict.redo <- predict(netFit.redo,  x.test.redo)
+y.predict.redo[,"Asian"]
+
+# predicted probability to be Asian
+y.predict.redo <- predict(netFit.redo,  x.test.redo, type = "prob")
+y.predict.redo[,"Asian"]
+# histogramfor the prob. to be Asian
+hist(y.predict.redo, main = "Predicted Probability to be Asian")
+```
+

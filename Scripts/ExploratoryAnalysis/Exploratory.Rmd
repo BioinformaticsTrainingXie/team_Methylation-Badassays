@@ -1,6 +1,6 @@
 ---
 title: "Exploratory Analysis of Processed Data"
-author: "Nivretta, Ming"
+author: "Nivretta, Ming, Victor"
 output: github_document
 ---
 
