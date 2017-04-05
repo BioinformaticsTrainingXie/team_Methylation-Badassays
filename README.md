@@ -44,15 +44,13 @@ We compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.ht
 
 * [Processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data) this folder contains the processed data processed from raw data.
 
-4. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts): scripts folder contains the script for:
-    * [Preprosessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md):This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains scripts process raw data to processed data.
+4. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) folder contains the script for:
+    * [Preprocessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md):This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains scripts process raw data to processed data.
     
-    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis) contains scripts to identify differentially methylated CpG sites between Caucasians and Asians in placental tissue. 
+    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis) contains the script to explore our initial training data and see if there is any obvious underlying structure. 
     
-    * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to use the identified CpG sites from [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) to determine the genetic ancestry of [a second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8) whose genetic ancestry is unknown.
+    * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to used to compare glmnet and SVM models used to build the ethnicity classifier, as well as the analysis of the resulting predictor CpGs. This folder also contains the script to run the classifier on the [second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), whose genetic ancestry is unknown.
 
-5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) folder contains the results. 
+5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) contains our main findings. 
 
-6. [docs](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/docs)
-
-7. [Poster](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/poster.pdf)
+6. [Poster](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/poster.pdf)
