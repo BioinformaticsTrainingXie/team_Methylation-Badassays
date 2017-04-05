@@ -181,7 +181,7 @@ It's not clear that our other variables are driving the variance in the data (se
 
 ```{r Scatter plot matrix first 5 PCs}
 # scatter plot matrix for the first 5 PCs
-splom(PC123[,c(2:6,10)], panel = panel.smoothScatter, raster = TRUE)
+splom(PC123[,c(2:6,10)], raster = TRUE)
 ```
 
 Plotting scatter plots of the top 5 PCs against ethnicity, none of the PCs can clearly separate samples by ethnicity, disappointing.
@@ -527,7 +527,7 @@ plot(cluster, hang=-1, label=y.predict[,"Asian"])
 
 Our classifier predicts that all test samples are Caucasians. This raises suspicion as we expected some ethnic diversity in our test set. Potential reasons for getting this result include:
 
-* these test samples just all happen to be Caucasiansl
+* these test samples just all happen to be Caucasians;
 
 * too many predictors for elastic net to select, some features are significantly different by ethnicity in training data by chance but were still selected as predictors, which introduces overfitting;
 
@@ -546,7 +546,6 @@ merged.design <- rbind(train.design[,c("Samplename","ga","sex")], test.design[,c
 merged.design$Group = relevel(
     factor(c(rep("Train",nrow(train.data)),rep("Test", nrow(test.data)))), 
     ref = "Train")
-    row.names = rownames(merged.sd)
 DesMat <- model.matrix(~ Group + ga + sex, merged.design)
 
 ```
@@ -595,7 +594,7 @@ The first PC differentiates training and test set, which means there are systema
 
 ```{r discard the first pc}
 
-Xhat<- pc.merged$x[,-1] %*% t(pc.merged$rotation[,-1])
+Xhat<- pc.merged$x[,-1] %*% t(pc.merged$rotation[,-1])  # discard the first PC
 
 merged.trunc <- scale(Xhat, center = F, scale = 1/pc.merged$scale)
 merged.trunc <- scale(merged.trunc, center = -1 * pc.merged$center, scale = FALSE) # back-scale features to original center and scale
@@ -650,8 +649,8 @@ x.train.redo <- train.data.gsd.redo
 
 netGrid <- expand.grid(alpha = c(0.55, 0.75, 0.9),
                            lambda = c(0.077, 0.25))
-# netGrid <- expand.grid(alpha = (1:9)/10,
-#                           lambda = seq(0.05,0.5,length.out = 9))
+netGrid <- expand.grid(alpha = (1:9)/10,
+                          lambda = seq(0.05,0.5,length.out = 9))
 netGrid <- expand.grid(alpha = c(0.75),
                            lambda = c(0.077, 0.25))
 # netGrid <- expand.grid(alpha = c(0.1),
