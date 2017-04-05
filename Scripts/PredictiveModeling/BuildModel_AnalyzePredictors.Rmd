@@ -20,6 +20,7 @@ library(caret)
 library(dplyr)
 library(parallel)
 library(doParallel)
+library(readxl)
 ```
 ## Parallel processing
 Set up parallel processing to speed up trian()
@@ -34,16 +35,14 @@ Read in pre-processed data:
 *Make sure the pre-processed data (data.txt, which is in data.zip) is present in the ../processed_data/ directory.
 
 ```{r load data}
-setwd('../')                                           # note: all of these relative file path calls work only for knitting
-
 # load data (pre-processed training set)
-train.data <- read.table('../data/Processed Data/data.txt')
+train.data <- read.table('../../data/Processed Data/data.txt')
 str(train.data)                                   ## row names are CpG sites, column names are sample names
 # transpose our data to have rows as observations, which is more convenient later on for building models
 train.data <- as.data.frame(t(train.data))
 
 # load metadata
-train.design <- read.csv("../data/Processed Data/des.txt", sep="\t", header=TRUE)
+train.design <- read.csv("../../data/Processed Data/des.txt", sep="\t", header=TRUE)
 str(train.design)
 
 row.names(train.data) == train.design$Samplename               # check that the samples are in same order
@@ -51,9 +50,8 @@ row.names(train.data) == train.design$Samplename               # check that the 
 
 Read in test data:
 ```{r read test}
-setwd('../') # for knitting
 # read pre-processed test data
-test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- read.table("../../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
 
 # meta data for test data
@@ -457,7 +455,7 @@ netGrid <- expand.grid(alpha = c(0.75),
 
 Re-fit the `glmnet` model:
 
-```{r tune glmnet parameters}
+```{r tune glmnet parameters redo}
 set.seed(2017)                                         # training models requires the use of random #s. Setting (set.seed()) the randomness ensures reproducibility
 
 
