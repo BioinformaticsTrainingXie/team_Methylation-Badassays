@@ -10,12 +10,14 @@ We will first find methylation profiles in subjects from our [dataset 1](https:/
 
 For the details of the project ideas, dataset and methods we used for this project, please check the [project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md). 
 
+------
 ### Workflow
 
 This figure summaries the workflow of our project:
 
 ![workflow](https://cloud.githubusercontent.com/assets/24922214/24690299/deb7dc8c-1980-11e7-9554-ec0ca92f4038.png)
 
+------
 ### Preprocessing, Normalization
 
 We first used this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to process (quality control, filtering, and normalization) the [raw data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Raw%20Data) of dataset 1 into to our [processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data). For the details information of dataset 1, please see [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Data/Raw%20Data/samplesheet.csv).
@@ -34,7 +36,7 @@ We used the R package [limma](https://bioconductor.org/packages/release/bioc/htm
 
 To build the DNA methylation ethnicity classifer, we compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) models. We ended up choosing glmnet for building the final model, and used a nested cross validation strategy to tune the penalization parameters, and for estimating the test error. After generating the final model, we analyzed the predictors, and examined the results of the predictions on the secondary unlabelled dataset. Please see the subdirectory [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) for the markdown files and details. 
 
-
+------
 ### Table of contents:
 
 1. [Project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md): project proposal includes the introduction to the ideas, dataset and methods we used in this project.
