@@ -16,14 +16,23 @@ This figure summaries the workflow of our project:
 
 ![workflow](https://cloud.githubusercontent.com/assets/24922214/24690299/deb7dc8c-1980-11e7-9554-ec0ca92f4038.png)
 
+### Preprocessing, Normalization
 
-We first used those [codes](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to process [raw data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Raw%20Data) of dataset 1 to [processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data) and we also performed [quality control](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md). For the details information of dataset 1, please see [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Data/Raw%20Data/samplesheet.csv).
+We first used this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to process (quality control, filtering, and normalization) the [raw data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Raw%20Data) of dataset 1 into to our [processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data). For the details information of dataset 1, please see [Metadata](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Data/Raw%20Data/samplesheet.csv).
 
-Then, we used a linear model to identify differentially methyalted probes with limma. Please see [Limma](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Limma/Limma.md) in scripts [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) for details. In [functional analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md), we used the COHCAP (City of Hope CpG Island Analysis Pipeline) package, CpGs identified as predictors by glmnet and prioritized by limma were annotated with chromosome mapping, location, gene name and CpG island information.
+**Please see the [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Results) folder for a more detailed write up on our findings from our analyses. If you're interested in the code, see the markdown files in the [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) folder**
 
-We also used the processed data to perform [exploratory analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md).
+### Exploratory Analysis
 
-We compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) to generate a classifier that will predict ancestry based on DNA methylation fatures. Please see [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.Rmd) for details.
+First, we [explored](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) our data by generating sample-sample correlation heatmaps, plotting a few random CpGs, before doing differntial methylation and predictive modeling analyses.
+
+### Differential Methylation Analysis
+
+We used the R package [limma](https://bioconductor.org/packages/release/bioc/html/limma.html) to identify differentially methylated probes with in the processed data between Asian and Caucasian samples. Please see our differential DNA methylation analysis [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Limma/Limma.md) in the [scripts folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) for the code and details. We explored gene function of the candidate hits from Limma, and also those from our predictive modeling analysis in this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md). We used the COHCAP (City of Hope CpG Island Analysis Pipeline) package, CpGs identified as predictors by glmnet and prioritized by limma were annotated with chromosome mapping, location, gene name and CpG island information.
+
+### Building an Ethnicity Classifer
+
+To build the DNA methylation ethnicity classifer, we compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) models. We ended up choosing glmnet for building the final model, and used a nested cross validation strategy to tune the penalization parameters, and for estimating the test error. After generating the final model, we analyzed the predictors, and examined the results of the predictions on the secondary unlabelled dataset. Please see [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) more the markdown files. 
 
 
 ### Table of contents:
@@ -52,5 +61,3 @@ We compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.ht
     * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to used to compare glmnet and SVM models used to build the ethnicity classifier, as well as the analysis of the resulting predictor CpGs. This folder also contains the script to run the classifier on the [second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), whose genetic ancestry is unknown.
 
 5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) contains our main findings. 
-
-6. [Poster](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/poster.pdf)
