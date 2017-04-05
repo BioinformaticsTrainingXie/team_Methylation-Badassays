@@ -32,7 +32,7 @@ We used the R package [limma](https://bioconductor.org/packages/release/bioc/htm
 
 ### Building an Ethnicity Classifer
 
-To build the DNA methylation ethnicity classifer, we compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) models. We ended up choosing glmnet for building the final model, and used a nested cross validation strategy to tune the penalization parameters, and for estimating the test error. After generating the final model, we analyzed the predictors, and examined the results of the predictions on the secondary unlabelled dataset. Please see [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) more the markdown files. 
+To build the DNA methylation ethnicity classifer, we compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) models. We ended up choosing glmnet for building the final model, and used a nested cross validation strategy to tune the penalization parameters, and for estimating the test error. After generating the final model, we analyzed the predictors, and examined the results of the predictions on the secondary unlabelled dataset. Please see the subdirectory [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) for the markdown files and details. 
 
 
 ### Table of contents:
@@ -54,10 +54,16 @@ To build the DNA methylation ethnicity classifer, we compare [SVM](http://ca.wil
 * [Processed data](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Data/Processed%20Data) this folder contains the processed data processed from raw data.
 
 4. [Scripts](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) folder contains the script for:
-    * [Preprocessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md):This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains scripts process raw data to processed data.
+    * [Preprocessing](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md): This script is for processing the raw data to processed data.
     
-    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis) contains the script to explore our initial training data and see if there is any obvious underlying structure. 
+    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md): This script to explore our processed training data and see if there is any obvious underlying structure. 
     
-    * [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) contains scripts to used to compare glmnet and SVM models used to build the ethnicity classifier, as well as the analysis of the resulting predictor CpGs. This folder also contains the script to run the classifier on the [second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), whose genetic ancestry is unknown.
+    * [Differential Methylation Analysis]()
+    
+    * [Functional Analysis]()
+    
+    * [Building the classifer](): This script is for building the ethnicity classifier, as well as for the analysis of the resulting predictor CpGs. This folder also contains the script to run the classifier  and analyze those results on the [second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), whose genetic ancestry is unknown.
+    
+    * [Comparing SVM vs glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This script used to compare glmnet and SVM. 
 
 5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) contains our main findings. 
