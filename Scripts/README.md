@@ -1,7 +1,5 @@
 ### This folder contains the scripts for the project.
 
-This folder contains the scripts used for processing raw data, and for the downstream analysis.
-
 * Preprocessing: This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/Preprocessing) contains the [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Preprocessing/PreprocessQC.md) to process raw data.
     
 * Exploratory Analysis: This [folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/ExploratoryAnalysis) contain the [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/ExploratoryAnalysis/Exploratory.md) to identify differentially methylated CpG sites between Caucasians and Asians in placental tissue. 

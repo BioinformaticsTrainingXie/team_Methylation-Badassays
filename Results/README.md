@@ -1,15 +1,12 @@
-This folder contains the main results for Methylation-Badsassays group.
+This folder contains the main results for The Methylation-Badassays.
 
 There is a separate write up for each component of our analysis.
 
 This folder contains the following writeups:
 
-1. (Exploratory Analysis)[]
+    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Exploratory%20Analysis%20Write%20Up.md)
+    * [Differential Methylation](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Differential%20Methylation%20Analysis%20Write%20Up.md)
+    * [Predictive Modeling]()
+    * [Functional Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Functional%20Analysis%20Write%20Up.md)
 
-2. (Predictive Modeling)[]
-
-3. (Functional Analysis)[]
-
-4. (Differential Methylation Analysis)[]
-
-And, we exported the [list]() of CpGs that were differentially expressed between Asians and Caucasians at an FDR of 0.01, the top 100 [list]() differentially methylated genes, and the [predictors]() that our glmnet model chose.
+And, we exported the [list](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/limma_pval0.01_ancestry_accountingforGender.txt) of CpGs that were differentially expressed between Asians and Caucasians at a p value of 0.01, the top 100 [list](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/limma_top100_ethnicity_accountingforGender.txt) differentially methylated genes, and the [predictors](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/predictorsGlmnet.txt) that our glmnet model chose.
