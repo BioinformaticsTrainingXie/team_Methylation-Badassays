@@ -77,8 +77,8 @@ We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized
 
 5. [Results](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/results) contain a summary of our main findings. 
 
-    * [Exploratory Analysis]()
-    * [Differential Methylation]()
+    * [Exploratory Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Exploratory%20Analysis%20Write%20Up.md)
+    * [Differential Methylation](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Differential%20Methylation%20Analysis%20Write%20Up.md)
     * [Predictive Modeling]()
-    * [Functional Analysis]()
+    * [Functional Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Functional%20Analysis%20Write%20Up.md)
     
