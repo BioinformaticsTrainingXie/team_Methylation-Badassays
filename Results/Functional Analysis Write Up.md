@@ -1,6 +1,6 @@
 # Functional analysis of sites prioritized by limma and glmnet
 
-The `COHCAP`` (City of Hope CpG Island Analysis Pipeline) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes. Specifically, these annotations contain which chromosome, location, gene and CpG island each CpG site maps to. We mapped two lists of CpG sites (those prioritized by glmnet and those prioritized by limma) to 450k annotations. 
+The [COHCAP (City of Hope CpG Island Analysis Pipeline)](https://www.bioconductor.org/packages/release/bioc/html/COHCAP.html) package has annotations available for 450k-UCSC, 450k-HMM and 27k array probes. Specifically, these annotations contain which chromosome, location, gene and CpG island each CpG site maps to. We mapped two lists of CpG sites (those prioritized by glmnet and those prioritized by limma) to 450k annotations. 
 
 ## Step 1: Glmnet CpG site mapping to chromosome, gene, location, and CpG Island
 
@@ -9,7 +9,7 @@ The CpG sites map to three genes: SH2D5, IVL and C3orf21. Next we looked at whic
 
 ## Step 2: Glmnet CpG site-gene GO terms
 
-We used the package `mygene`` for GO term queries.
+We used the package [mygene](https://www.bioconductor.org/packages/release/bioc/html/mygene.html) for GO term queries.
 
 Gene SH2D5 is involved in postsynaptic density (presumably in neurons), cell junction, and the postsynaptic membrane. Gene IVL is involved in cornfication (hard layer of skin formation), peptide cross-linking, and other protein binding. Gene C3orf21 is a key component of ER membrane, is involved in enzyme transport, and in ion binding.
 
