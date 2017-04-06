@@ -29,9 +29,9 @@ Load a set of CpG sites of interest
 
 ```{r}
 
-interestingSites_net <- read.table("../../Results/predictorsGlmnet.txt")
+interestingSites_net <- read.table("CopyOfpredictorsGlmnet.txt")
 
-interestingSites_limma <- read.table("../../Results/limma_pval0.01_ethnicity_accountingforGender.txt")
+interestingSites_limma <- read.table("CopyOflimma_pval0.01_ancestry_accountingforGender.txt")
 
 ```
 

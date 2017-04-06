@@ -226,9 +226,9 @@ library(mygene)
 Load a set of CpG sites of interest
 
 ``` r
-interestingSites_net <- read.table("../../Data/Processed Data/predictorsGlmnet.txt")
+interestingSites_net <- read.table("CopyOfpredictorsGlmnet.txt")
 
-interestingSites_limma <- read.table("../../Data/Processed Data/limma_fdr0.01_ethnicity_accountingforGender.txt")
+interestingSites_limma <- read.table("CopyOflimma_pval0.01_ancestry_accountingforGender.txt")
 ```
 
 Step 1: Glmnet sites' annotation to chromosome, location, gene and CpG Islands
