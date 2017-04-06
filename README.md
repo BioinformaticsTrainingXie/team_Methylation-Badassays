@@ -32,7 +32,7 @@ We [explored](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/mas
 
 ### Differential Methylation Analysis
 
-We used the R package [limma](https://bioconductor.org/packages/release/bioc/html/limma.html) to identify differentially methylated probes between Asian and Caucasian samples. Please see our differential DNA methylation analysis [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Limma/Limma.md) in the [scripts folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) for the code and details. Limma prioritized 13 CpG sites that are differentially methylated between Caucasian and Asian genetic ancestry using a cutoff off p value = 0.01
+We used the R package [limma](https://bioconductor.org/packages/release/bioc/html/limma.html) to identify differentially methylated probes between Asian and Caucasian samples. Please see our differential DNA methylation analysis [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/Limma/Limma.md) in the [scripts folder](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts) for the code and details. Limma prioritized 13 CpG sites that are differentially methylated between Caucasian and Asian genetic ancestry using a cutoff off p value = 0.01.
 
 ### Building an Ancestry Classifer
 

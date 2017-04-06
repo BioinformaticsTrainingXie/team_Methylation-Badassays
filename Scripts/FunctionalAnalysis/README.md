@@ -1,1 +1,3 @@
 ### This folder contains the scripts for Functional analysis.
+
+We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized by glmnet, in this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md). Using the COHCAP (City of Hope CpG Island Analysis Pipeline) package, the CpGs we mapped to chromosome, location, gene name and CpG island information. Each gene was annotated with its GO term using the package mygene.
