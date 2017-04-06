@@ -690,3 +690,5 @@ y.predict.redo[,"Asian"]
 y.predict.redo
 ```
 
+
+# step 6: weighted loss function; up-sampling; M value instead of beta value; correlation between train and test for identified predictors
