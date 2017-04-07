@@ -10,15 +10,17 @@ We will first find methylation profiles in subjects from our [dataset 1](https:/
 
 For the details of the project ideas, dataset and methods we used for this project, please check our [project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md). 
 
+------
 
-Team Member:
+### Team Member:
 
 |  Name  | Department/Program  |GitHub ID |
 |-------|---------------------|----------|
 | Victor Yuan| Genome Science and Technology| @wvictor14 |
-
-
-
+| Michael Yuen|Medical Genetics|@myuen89|
+|Nivretta Thatra|Bioinformatics|@nivretta|
+|Ming Wan|Statistics|@MingWan10|
+|Anni Zhang|Genome Science and Technology|@annizubc|
 
 
 ------
@@ -52,6 +54,23 @@ To build the DNA methylation ancestry classifer, we compare [SVM](http://ca.wile
 ## Brief Functional Analysis
 
 We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized by glmnet, in this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md). Using the COHCAP (City of Hope CpG Island Analysis Pipeline) package, the CpGs we mapped to chromosome, location, gene name and CpG island information. Each gene was annotated with its GO term using the package mygene.
+
+### Summary
+
+* SVM performed slightly better than glmnet (for both training and testing error)
+
+* Final model used 11 CpG predictors and was built with glmnet with a AUC of 0.981 and 0.977+-0.024 for training and testing error respectively (α = 0.75, λ = 0.25).
+
+* The classifier predicted all of the unlabeled test set to Caucasian, which we doubt is the true case.
+
+* We suspect the test set is too ‘different’ from the training data set for the classifier to perform accurately on the test set
+
+### Future Direction
+
+* Normalizing and QCing the test and training datasets together may be necessary for DNA methylation classifiers to perform well.
+
+* Using MDS ancestry coordinates from population stratification meta-analyses may provide ‘labels’ to assess classifier performance or iprove model building. (self-reported ancestry can be unreliable)
+
 
 ------
 ### Table of contents:
