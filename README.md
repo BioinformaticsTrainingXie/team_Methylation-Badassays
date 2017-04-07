@@ -51,7 +51,7 @@ We used the R package [limma](https://bioconductor.org/packages/release/bioc/htm
 
 To build the DNA methylation ancestry classifer, we compare [SVM](http://ca.wiley.com/WileyCDA/WileyTitle/productCd-0471030031.html) and [elastic net logistic regression (glmnet)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-10-r115) models. We ended up choosing glmnet for building the final model, and used a nested cross validation strategy to tune the penalization parameters, and for estimating the test error. After generating the final model, we analyzed the predictors, and examined the results of the predictions on the secondary unlabelled dataset. Please see the subdirectory [predictive modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/tree/master/Scripts/PredictiveModeling) for the markdown files and details. 
 
-## Brief Functional Analysis
+### Brief Functional Analysis
 
 We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized by glmnet, in this [script](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md). Using the COHCAP (City of Hope CpG Island Analysis Pipeline) package, the CpGs we mapped to chromosome, location, gene name and CpG island information. Each gene was annotated with its GO term using the package mygene.
 
