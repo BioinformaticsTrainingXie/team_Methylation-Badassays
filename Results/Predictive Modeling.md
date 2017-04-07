@@ -73,7 +73,9 @@ We suspect that the classification is performing poorly on the test data because
 
 #### References
 [1] - Vapnik VN. Statistical Learning Theory. Wiley, New York (1998)
+
 [2] - Horvath S. DNA methylation age of human tissues and cell types. Genome Biol. 2013;14:R115.
+
 [3] - Kuhn, M. (2008). Caret package. Journal of Statistical Software, 28(5)
 
 
