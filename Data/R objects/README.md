@@ -10,3 +10,5 @@ The following R objects in this folder:
   * netFitfinal.rds - glmnet model **load this one for 'BuildModel_AnalyzePredictors.Rmd' script*
   
   * y_predictNet.rds - contains predictions on dataset2 using netFitfinal.rds
+  * netTesterror.rds - test error for glmnet
+  * svmTesterror.rds - test error for SVM
