@@ -46,28 +46,28 @@ Using the glmnet model, which utilizes 11 predictor CpGs to predict Ethnicity, w
 
 ### Clustering Analysis
 
-![Train all CpG]()
-![Train just predictors]()
+![Train all CpG](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/clustering%20train%20based%20on%20predictors-1.png)
+![Train just predictors](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/clustering%20train%20based%20on%20predictors-2.png)
 
 Clustering combined Train and Test data using the predictor CpGs only results in separation of two main clusters, consisting of primarily Asians or Caucasians. The test training samples (unlabeled) primarily fall into the Caucasian cluster.
 
-![Train and test]()
+![Train and test](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/cluster%20both%20test%20and%20train-1.png)
 
 ## Step 4: Analyze predictors
 
 ### Plot all 11 predictors
 
-![11 predictors]()
+![11 predictors](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/plot%20top%2035-1.png)
 
 Next we plot the top and last predictor to see their difference in methylation. 
 
-![1st CpG]()
-![11th CpG]()
+![1st CpG](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/plotting%20CpGs-1.png)
+![11th CpG](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/plotting%20CpGs-2.png)
 
 ## Step 5: PCA on test set
 Here we look at a PCA on merged test and training sets to show that the first PC is significantly different between the two datasets.
 
-![PCA on merged data]()
+![PCA on merged data](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/PCA%20on%20testtrain.png)
 
 We suspect that the classification is performing poorly on the test data because we doubt that it is truly entirely Caucasian. From this PCA plot on test and train, we can see that the first PC is much different in train vs test (bottom right panel). This indicates that our two datasets are very different, which might make the classifier unsuitable for the test.
 
