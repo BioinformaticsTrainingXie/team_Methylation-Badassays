@@ -8,7 +8,7 @@ This folder contains the following writeups:
     
 2. [Differential Methylation](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Differential%20Methylation%20Analysis%20Write%20Up.md)
    
-3. [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Predictive%20Modeling.docx)
+3. [Predictive Modeling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Predictive%20Modeling.md)
     
 4. [Functional Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Results/Functional%20Analysis%20Write%20Up.md)
 
