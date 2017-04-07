@@ -10,6 +10,17 @@ We will first find methylation profiles in subjects from our [dataset 1](https:/
 
 For the details of the project ideas, dataset and methods we used for this project, please check our [project proposal](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/project_proposal.md). 
 
+
+Team Member:
+
+|  Name  | Department/Program  |GitHub ID |
+|-------|---------------------|----------|
+| Victor Yuan| Genome Science and Technology| @wvictor14 |
+
+
+
+
+
 ------
 ### Workflow
 
