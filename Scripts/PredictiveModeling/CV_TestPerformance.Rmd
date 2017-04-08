@@ -5,6 +5,10 @@ date: "April 4, 2017"
 output: html_document
 ---
 
+(Repeated CV takes a long time to run for `glmnet`. Hence to ensure knitting finishes fast, we excluded CV part for comparing performance between glmnet vs. SVM in "BuildModel_AnalyzePredictors.Rmd". CV is done in this file and CV results were saved as objects in data/R objects folder.
+
+Step 1&2 are the same as in "BuildModel_AnalyzePredictors.Rmd", only step 3 is new.)
+
 # S0 Set up workspace
 ## Load packages
 ```{r load packages, message=FALSE}
@@ -187,7 +191,7 @@ svmFit
 
 # S3 Compare Model Performance Using Cross Validation
 
-```{r Estimate test error by nested cv}
+```{r Estimate glmnet test error by nested cv}
 # this is adapted from Amrit's code from lec 19
 #use repeated CV to estimate test performance
 set.seed(2018)
@@ -225,7 +229,7 @@ system.time(netTesterror <- lapply(folds, function(i){
 })
 )
 # netTesterror
-saveRDS(netTesterror,"netTesterror.rds")
+#saveRDS(netTesterror,"netTesterror.rds")
 ```
 
 ```{r Performance}
@@ -260,6 +264,8 @@ text(x = 60, y = 40, labels =
 
 ## Support Vector Machine
 
+We do not need repeated CV for linear kernel SVM as it does not have tuning parameters. Regular CV is conducted for SVM instead.
+
 ```{r train svm}
 # Linear kernel SVM with CV
     fitControl <- trainControl(method = "cv", 
@@ -269,16 +275,6 @@ text(x = 60, y = 40, labels =
 													 savePredictions = TRUE,
 													 allowParallel = T)
     
-    
-    # build SVM classifier
-    svm.fit <- train(x=x.train,
-                        y= y.train,
-                        method = "svmLinear",
-                        preProc = c("center","scale"),
-                        metric="ROC",
-                        trControl=fitControl)
-
-    svm.fit
 ```
 
 
