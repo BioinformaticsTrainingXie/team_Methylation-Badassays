@@ -71,6 +71,38 @@ Here we look at a PCA on merged test and training sets to show that the first PC
 
 We suspect that the classification is performing poorly on the test data because we doubt that it is truly entirely Caucasian. From this PCA plot on test and train, we can see that the first PC is much different in train vs test (bottom right panel). This indicates that our two datasets are very different, which might make the classifier unsuitable for the test.
 
+## Follow-ups:
+
+(All analysis done below were after the poster session and are explorations of our "future directions".)
+
+### Homogenize Test and Training Data & Re-fit Elastic Net
+
+
+As shown in the last step, the first PC for merged data differentiates training and test set, which means there are systematic differences between the two sets. We could discard the top PC first before predicting test set. This is done by:
+
+1. Reconstruct the (centered and scaled) merged dataset by discarding the top PC;
+
+2. Re-scale and re-center the correlation matrix for the reconstructed merged data.
+
+After discarding the top PC for merged data, we separate training and test dataset again and use the homogenized training set to re-fit the logistic regression model with elastic net. Resulting probabilities for a test sample to be Asian is shown in the histogram below:
+
+![Histogram on Predicted Asian Probability after Homogenization](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+
+### Weighted Classes and Up-sampling
+
+We realized after the poster session that another reason our `glmnet` model predicts poorly is because we have imbalanced number of classes. We attempt some methods that remedies this problem and update our results:
+
+* Many of the predictive models for classification have the ability to use case weights where each individual data point can be given more emphasis in the model training phase. One approach to rebalancing the training set would be to increase the weights for the samples in the minority classes. This can be interpreted as having identical duplicate data points with the exact same predictor values. Logistic regression, for example, can utilize "Asian" class weights in this way.
+
+![Histogram on Predicted Asian Probability using weighted glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+
+
+* Instead of having the model dealing with imbalanced ratio of classes, we can attempt to balance the class frequencies. There are post-hoc sampling approaches that can help attenuate the effects of the imbalance during model training. Two general post hoc approaches are down-sampling and up-sampling the data. Here we will try out up-sampling, which is a technique that simulates additional data points to improve balance across classes.
+
+![Histogram on Predicted Asian Probability with up-sampling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+
+Good news is that both weighted glmnet and up-sampling boosted the number of predicted Asians to around 8 samples, which is slightly more believable. Still, more work can be done in the future.
+
 #### References
 [1] - Vapnik VN. Statistical Learning Theory. Wiley, New York (1998)
 

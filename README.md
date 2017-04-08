@@ -103,7 +103,7 @@ We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized
     
     * [Building the classifer](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors.md): This script is for building the ancestry classifier, as well as for the analysis of the resulting predictor CpGs. This folder also contains the script to run the classifier  and analyze those results on the [second dataset](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-016-0054-8), whose genetic ancestry is unknown.
     
-    * [Comparing SVM vs glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/PredictiveModeling.md): This script was used to compare glmnet and SVM. 
+    * [Comparing SVM vs glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/CV_TestPerformance.md): This script was used to compare glmnet and SVM. 
 
     * [Functional Analysis](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/FunctionalAnalysis/FunctionalAnalysis.md): for the functional analysis of the CpG sites prioritized by glmnet and limma.
 

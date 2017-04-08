@@ -471,7 +471,7 @@ system.time(netFit.redo <- train(x = x.train.redo,   # samples need to be in row
 netFit.redo
 length(predictors(netFit.redo))
 
-# Histogram of probability(Asian)
+# Histogram of probability(Asian) for training set
 probTest.redo <- predict(netFit.redo, x.train.redo, type = 'prob')
 ethProb.redo <- probTest.redo[,'Asian']
 hist(ethProb.redo)
@@ -489,12 +489,151 @@ x.test.redo <- x.test.redo[, colnames(x.test.redo) %in% colnames(x.train.redo)]
 # classification
 
 y.predict.redo <- predict(netFit.redo,  x.test.redo)
-y.predict.redo[,"Asian"]
 
 # predicted probability to be Asian
 y.predict.redo <- predict(netFit.redo,  x.test.redo, type = "prob")
 y.predict.redo[,"Asian"]
 # histogramfor the prob. to be Asian
-hist(y.predict.redo, main = "Predicted Probability to be Asian")
+hist(y.predict.redo[,"Asian"], main = "Predicted Probability to be Asian")
 ```
 
+
+# step 6: Trying weighted cases and up-sampling
+
+We realized after the poster session that another reason our `glmnet` model predicts poorly is because we have imbalanced number of classes. We attempt some methods that remedies this problem and update our results:
+
+## Unequal Class Weights
+
+Many of the predictive models for classification have the ability to use case weights where each individual data point can be given more emphasis in the model training phase. One approach to rebalancing the training set would be to increase the weights for the samples in the minority classes. This can be interpreted as having identical duplicate data points with the exact same predictor values. Logistic regression, for example, can utilize "Asian" class weights in this way.
+
+- From: [How do I handle an unbalanced training set?]( https://www.researchgate.net/post/In_classification_how_do_i_handle_an_unbalanced_training_set)
+
+Here The weights ratio between an Asian and a Caucasian is n_Caucasian/n_Asian. Also, we would use the homogenized data.
+
+```{r fit weighted glmnet}
+# tuning parameter grid
+netGrid <- expand.grid(alpha = (5:9)/10,
+                          lambda = seq(0.1,0.5,length.out = 5))
+
+# Create model weights (they sum to one)
+
+model_weights <- ifelse(y.train == "Asian",
+                        (1/table(y.train)["Asian"]) * 0.5,
+                        (1/table(y.train)["Caucasian"]) * 0.5)
+
+# Build weighted model
+
+weighted_fit <- train(x = x.train.redo,
+                      y = y.train,
+                      method = "glmnet",
+                      weights = model_weights,
+                      metric = "ROC",
+                      trControl = fitControl,
+      								tuneGrid = netGrid,
+      								preProcess = c( "center", "scale"))
+
+weighted_fit
+
+# prediction, classification results
+
+y.predict.weight <- predict(weighted_fit,  x.test.redo)
+y.predict.weight
+y.predict.weight.des <- data.frame(Samplename = rownames(x.test.redo), Ethnicity = paste("Test",y.predict.weight,sep = "_")) # to be used for dendrogram
+
+# predicted probability to be Asian
+y.predict.weight <- predict(weighted_fit,  x.test.redo, type = "prob")
+y.predict.weight[,"Asian"]
+# histogram for the prob. to be Asian
+hist(y.predict.weight[,"Asian"], main = "Predicted Probability to be Asian")
+
+```
+
+Now map predicted results to dendrogram from hierarchical clustering of the merged data:
+
+```{r dendrogram weighted glmnet}
+# make a design matrix containing info on whether it's training or test data, and ethnicity info
+
+weight.des <- rbind(train.design[,c("Samplename","Ethnicity")],y.predict.weight.des)
+
+# clustering for (centered and scaled) merged data
+hclust.weight <- hclust(dist(scale(merged.trunc,center = T,scale = T), method = 'euclidean'), method = "average")
+
+labels.weight <- data.frame(labels(hclust.weight))   # pulls out current labels (samplename)
+colnames(labels.weight) <- 'Samplename'
+labels.weight <- labels.weight %>% left_join(weight.des, by = 'Samplename')
+
+labels(hclust.weight) <- labels.weight$Samplename
+
+
+hclust.weight <- swaplabels(hclust.weight, weight.des)
+labels(hclust.weight)
+
+dendro.weight = cutree(hclust.weight, 2)
+ColorDendrogram(hclust.weight, y = dendro.weight, labels = names(dendro.weight), branchlength = 0.3, main = 'Clustering train and test with labels from weighted glmnet')
+
+```
+
+
+## up-sampling
+
+instead of having the model dealing with imbalanced ratio of classes, we can attempt to balance the class frequencies. There are post-hoc sampling approaches that can help attenuate the effects of the imbalance during model training. Two general post hoc approaches are down-sampling and up-sampling the data. Here we will try out up-sampling, which is a technique that simulates additional data points to improve balance across classes.
+
+- From: [How do I handle an unbalanced training set?]( https://www.researchgate.net/post/In_classification_how_do_i_handle_an_unbalanced_training_set)
+
+
+```{r fit up-sampling glmnet}
+
+# Build up-sampled model
+
+fitControl$sampling <- "up"
+
+up_fit <- train(x = x.train.redo,
+                      y = y.train,
+                      method = "glmnet",
+                      metric = "ROC",
+                      trControl = fitControl,
+      								tuneGrid = netGrid,
+      								preProcess = c( "center", "scale"))
+
+up_fit
+
+# prediction, classification results
+
+y.predict.up <- predict(up_fit,  x.test.redo)
+y.predict.up
+y.predict.up.des <- data.frame(Samplename = rownames(x.test.redo), Ethnicity = paste("Test",y.predict.up,sep = "_")) # to be used for dendrogram
+
+# predicted probability to be Asian
+y.predict.up <- predict(up_fit,  x.test.redo, type = "prob")
+y.predict.up[,"Asian"]
+# histogramfor the prob. to be Asian
+hist(y.predict.up[,"Asian"], main = "Predicted Probability to be Asian")
+
+```
+
+Now map predicted results to dendrogram from hierarchical clustering of the merged data:
+
+```{r dendrogram up-sampling}
+# make a design matrix containing info on whether it's training or test data, and ethnicity info
+
+up.des <- rbind(train.design[,c("Samplename","Ethnicity")],y.predict.up.des)
+
+# clustering for (centered and scaled) merged data
+hclust.up <- hclust(dist(scale(merged.trunc,center = T,scale = T), method = 'euclidean'), method = "average")
+
+labels.up <- data.frame(labels(hclust.up))   # pulls out current labels (samplename)
+colnames(labels.up) <- 'Samplename'
+labels.up <- labels.up %>% left_join(up.des, by = 'Samplename')
+
+labels(hclust.up) <- labels.up$Samplename
+
+
+hclust.up <- swaplabels(hclust.up, up.des)
+labels(hclust.up)
+
+dendro.up = cutree(hclust.up, 2)
+ColorDendrogram(hclust.up, y = dendro.up, labels = names(dendro.up), branchlength = 0.3, main = 'Clustering train and test with labels from up-sampling glmnet')
+
+```
+
+It is disappointing that the dendrograms cannot separate Asians from Caucasians that well, as Euclidean distance is not well-suited for calculating the distance for high-dimensional data. Good news is that both weighted glmnet and up-sampling boosted the number of predicted Asians to around 8 samples, which is slightly more believable. Still, more work can be done in the future.
