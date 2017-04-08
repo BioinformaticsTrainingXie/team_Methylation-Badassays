@@ -86,7 +86,7 @@ As shown in the last step, the first PC for merged data differentiates training 
 
 After discarding the top PC for merged data, we separate training and test dataset again and use the homogenized training set to re-fit the logistic regression model with elastic net. Resulting probabilities for a test sample to be Asian is shown in the histogram below:
 
-![Histogram on Predicted Asian Probability after Homogenization](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+![Histogram on Predicted Asian Probability after Homogenization](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/predict%20redo-1.png)
 
 ### Weighted Classes and Up-sampling
 
@@ -94,12 +94,12 @@ We realized after the poster session that another reason our `glmnet` model pred
 
 * Many of the predictive models for classification have the ability to use case weights where each individual data point can be given more emphasis in the model training phase. One approach to rebalancing the training set would be to increase the weights for the samples in the minority classes. This can be interpreted as having identical duplicate data points with the exact same predictor values. Logistic regression, for example, can utilize "Asian" class weights in this way.
 
-![Histogram on Predicted Asian Probability using weighted glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+![Histogram on Predicted Asian Probability using weighted glmnet](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/fit%20weighted%20glmnet-1.png)
 
 
 * Instead of having the model dealing with imbalanced ratio of classes, we can attempt to balance the class frequencies. There are post-hoc sampling approaches that can help attenuate the effects of the imbalance during model training. Two general post hoc approaches are down-sampling and up-sampling the data. Here we will try out up-sampling, which is a technique that simulates additional data points to improve balance across classes.
 
-![Histogram on Predicted Asian Probability with up-sampling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/.png)
+![Histogram on Predicted Asian Probability with up-sampling](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/Scripts/PredictiveModeling/BuildModel_AnalyzePredictors_files/figure-markdown_github/fit%20up-sampling%20glmnet-1.png)
 
 Good news is that both weighted glmnet and up-sampling boosted the number of predicted Asians to around 8 samples, which is slightly more believable. Still, more work can be done in the future.
 
