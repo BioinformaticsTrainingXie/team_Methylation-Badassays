@@ -57,6 +57,8 @@ We looked the 13 CpG sites prioritized by limma and the 11 CpG sites prioritized
 
 ### Summary
 
+* Please see our [poster](https://github.com/STAT540-UBC/team_Methylation-Badassays/blob/master/poster.pdf)! :smile:
+
 * SVM performed slightly better than glmnet (for both training and testing error)
 
 * Final model used 11 CpG predictors and was built with glmnet with a AUC of 0.981 and 0.977+-0.024 for training and testing error respectively (α = 0.75, λ = 0.25).
