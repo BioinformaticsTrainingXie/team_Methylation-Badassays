@@ -2,7 +2,7 @@
 title: "CV_TestPerformance"
 author: "Ming, Victor"
 date: "April 4, 2017"
-output: html_document
+output: github_document
 ---
 
 (Repeated CV takes a long time to run for `glmnet`. Hence to ensure knitting finishes fast, we excluded CV part for comparing performance between glmnet vs. SVM in "BuildModel_AnalyzePredictors.Rmd". CV is done in this file and CV results were saved as objects in data/R objects folder.
@@ -22,6 +22,7 @@ library(caret)
 library(dplyr)
 library(parallel)
 library(doParallel)
+library(readxl)
 ```
 ## Parallel processing
 Set up parallel processing to speed up trian()
@@ -53,9 +54,8 @@ row.names(train.data) == train.design$Samplename               # check that the 
 
 Read in test data:
 ```{r read test}
-setwd('../') # for knitting
 # read pre-processed test data
-test.data <- read.table("../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
+test.data <- read.table("../../Data/Processed Data/Test data/Matrix.processed.betas.placenta.txt", row.names = 1, header = T)
 test.data <- as.data.frame(t(test.data))   #transpose data
 
 # meta data for test data
@@ -232,7 +232,7 @@ system.time(netTesterror <- lapply(folds, function(i){
 #saveRDS(netTesterror,"netTesterror.rds")
 ```
 
-```{r Performance}
+```{r glmnet Performance}
 # Computer classification performance measures
 # enet
 Performance <- mapply(function(x, y){
@@ -278,7 +278,7 @@ We do not need repeated CV for linear kernel SVM as it does not have tuning para
 ```
 
 
-```{r Estimate test error by nested cv}
+```{r Estimate svm test error by nested cv}
 # this is adapted from Amrit's code from lec 19
 #use repeated CV to estimate test performance
 set.seed(2018)
@@ -313,7 +313,7 @@ system.time(svmTesterror <- lapply(folds, function(j){
 #svmTesterror
 ```
 
-```{r Performance}
+```{r svm Performance}
 # Computer classification performance measures
 # enet
 Performance <- mapply(function(x, y){
@@ -328,7 +328,7 @@ Performance <- mapply(function(x, y){
 Performance
 ```
 
-```{r ROC curve}
+```{r svm ROC curve}
 # plot ROC curve
 
 plot(Performance['tpr',][[1]] ~ Performance['fpr',][[1]],
