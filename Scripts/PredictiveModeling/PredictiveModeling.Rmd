@@ -645,16 +645,11 @@ train.data.gsd.redo <- x.train.redo[,colnames(x.train.redo) %in% names(train.gsd
 x.train.redo <- train.data.gsd.redo
 ```
 
-```{r}
-
-netGrid <- expand.grid(alpha = c(0.55, 0.75, 0.9),
-                           lambda = c(0.077, 0.25))
+```{r tuning grids}
 netGrid <- expand.grid(alpha = (1:9)/10,
                           lambda = seq(0.05,0.5,length.out = 9))
 netGrid <- expand.grid(alpha = c(0.75),
                            lambda = c(0.077, 0.25))
-# netGrid <- expand.grid(alpha = c(0.1),
-#                            lambda = c(0.5))
 ```
 
 
@@ -691,4 +686,137 @@ y.predict.redo
 ```
 
 
-# step 6: weighted loss function; up-sampling; M value instead of beta value; correlation between train and test for identified predictors
+# step 6: Trying weighted cases and up-sampling
+
+We realized after the poster session that another reason our `glmnet` model predicts poorly is because we have imbalanced number of classes. We attempt some methods that remedies this problem and update our results:
+
+## Unequal Class Weights
+
+Many of the predictive models for classification have the ability to use case weights where each individual data point can be given more emphasis in the model training phase. One approach to rebalancing the training set would be to increase the weights for the samples in the minority classes. This can be interpreted as having identical duplicate data points with the exact same predictor values. Logistic regression, for example, can utilize "Asian" class weights in this way.
+
+- From: [How do I handle an unbalanced training set?]( https://www.researchgate.net/post/In_classification_how_do_i_handle_an_unbalanced_training_set)
+
+Here The weights ratio between an Asian and a Caucasian is n_Caucasian/n_Asian. The
+
+```{r fit weighted glmnet}
+# tuning parameter grid
+netGrid <- expand.grid(alpha = (5:9)/10,
+                          lambda = seq(0.1,0.5,length.out = 5))
+
+# Create model weights (they sum to one)
+
+model_weights <- ifelse(y.train == "Asian",
+                        (1/table(y.train)["Asian"]) * 0.5,
+                        (1/table(y.train)["Caucasian"]) * 0.5)
+
+# Build weighted model
+
+weighted_fit <- train(x = x.train.redo,
+                      y = y.train,
+                      method = "glmnet",
+                      weights = model_weights,
+                      metric = "ROC",
+                      trControl = fitControl,
+      								tuneGrid = netGrid,
+      								preProcess = c( "center", "scale"))
+
+weighted_fit
+
+# prediction, classification results
+
+y.predict.weight <- predict(weighted_fit,  x.test.redo)
+y.predict.weight[,"Asian"]
+
+# predicted probability to be Asian
+y.predict.weight <- predict(weighted_fit,  x.test.redo, type = "prob")
+y.predict.weight[,"Asian"]
+# histogram for the prob. to be Asian
+hist(y.predict.weight, main = "Predicted Probability to be Asian")
+
+```
+
+
+## up-sampling
+
+instead of having the model dealing with imbalanced ratio of classes, we can attempt to balance the class frequencies. There are post-hoc sampling approaches that can help attenuate the effects of the imbalance during model training. Two general post hoc approaches are down-sampling and up-sampling the data. Here we will try out up-sampling, which is a technique that simulates additional data points to improve balance across classes.
+
+- From: [How do I handle an unbalanced training set?]( https://www.researchgate.net/post/In_classification_how_do_i_handle_an_unbalanced_training_set)
+
+
+```{r fit up-sampling glmnet}
+
+# Build up-sampled model
+
+fitControl$sampling <- "up"
+
+up_fit <- train(x = x.train.redo,
+                      y = y.train,
+                      method = "glmnet",
+                      metric = "ROC",
+                      trControl = fitControl,
+      								tuneGrid = netGrid,
+      								preProcess = c( "center", "scale"))
+
+up_fit
+
+# prediction, classification results
+
+y.predict.up <- predict(up_fit,  x.test.redo)
+y.predict.up[,"Asian"]
+
+# predicted probability to be Asian
+y.predict.up <- predict(up_fit,  x.test.redo, type = "prob")
+y.predict.up[,"Asian"]
+# histogramfor the prob. to be Asian
+hist(y.predict.up, main = "Predicted Probability to be Asian")
+
+```
+
+```{r Examine results for test set}
+
+# examine ROC results
+model_list <- list(original = netFit.redo,
+                   weighted = weighted_fit,
+                   up = up_fit)
+
+model_list_roc <- model_list %>%
+  map(test_roc, data = imbal_test)
+
+model_list_roc %>%
+  map(auc)
+```
+
+```{r clustering once more}
+# add samplename column to match on
+x.test.predictors <- x.test.predictors %>% 
+                        tibble::rownames_to_column('Samplename')
+x.train.predictors <- x.train.predictors %>%
+                        tibble::rownames_to_column('Samplename') 
+
+# replace sample name with true ethnicity info
+#x.train.predictors <- x.train.predictors %>% left_join(select(train.design, Samplename, Ethnicity), by = 'Samplename') 
+#x.train.predictors$Samplename <- x.train.predictors$Ethnicity 
+
+# combine train and test
+x.test.train.predictors <- full_join(x.train.predictors, x.test.predictors) %>%
+                            tibble::column_to_rownames('Samplename')
+# clustering
+hclust5 <- hclust(dist(x.test.train.predictors, method = 'euclidean'))
+labels5 <- data.frame(labels(hclust5))   # pulls out current labels (samplename)
+colnames(labels5) <- 'Samplename'
+labels5 <- labels5 %>% left_join(select(train.design, Samplename, Ethnicity), by = 'Samplename')
+#replace train samples with ethnicity labels
+#labels5$Samplename[!is.na(labels5$Ethnicity)] <- as.character(labels5$Ethnicity[!is.na(labels5$Ethnicity)])
+
+labels(hclust5) <- labels5$Samplename
+
+
+hclust5 <- swaplabels(hclust5, train.design)
+labels(hclust5)
+
+y5 = cutree(hclust5, 5)
+ColorDendrogram(hclust5, y = y5, labels = names(y5), branchlength = 0.3, main = 'Clustering train with predictors only')
+
+
+```
+
